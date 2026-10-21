@@ -1,0 +1,26 @@
+<!-- Footer -->
+	<footer id="footer">
+		<div class="inner">
+			<ul class="icons">
+				<li><a href="mailto:{{ site.email }}" class="icon alt fa-envelope-o" target="_blank"><span class="label">{{ site.email }}</span></a></li>
+				{% for link in site.social %}
+				<li><a href="{{ link.url }}" class="icon alt {{ link.icon }}" target="_blank"><span class="label">{{ link.name }}</span></a></li>
+				{% endfor %}
+			</ul>
+			<ul class="copyright">
+				<li>&copy; {{ site.title }} {{ site.subtitle }}</li>
+				<li>Design: <a href="https://html5up.net" target="_blank">HTML5 UP</a></li>
+				<li>Jekyll integration: <a href="http://andrewbanchi.ch" target="_blank">Andrew Banchich</a></li>
+			</ul>
+		</div>
+	</footer>
+
+</div>
+
+<!-- Scripts -->
+	<script src="{{ "/assets/js/jquery.min.js" | relative_url }}"></script>
+	<script src="{{ "/assets/js/jquery.scrolly.min.js" | relative_url }}"></script>
+	<script src="{{ "/assets/js/jquery.scrollex.min.js" | relative_url }}"></script>
+	<script src="{{ "/assets/js/skel.min.js" | relative_url }}"></script>
+	<script src="{{ "/assets/js/util.js" | relative_url }}"></script>
+	<script src="{{ "/assets/js/main.js" | relative_url }}"></script>

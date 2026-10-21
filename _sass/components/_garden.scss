@@ -1,0 +1,59 @@
+///
+/// Digital garden (garden.md, _layouts/note.html)
+///
+
+	.note-back {
+		margin-bottom: 1em;
+	}
+
+	.note-meta {
+		color: _palette(fg-light);
+		font-size: 0.9em;
+
+		span + span:before {
+			content: '\00b7';
+			margin: 0 0.6em;
+		}
+	}
+
+	.note-stage {
+		white-space: nowrap;
+	}
+
+	.internal-link.unplanted {
+		color: _palette(fg-light);
+		opacity: 0.6;
+		cursor: help;
+	}
+
+	.note-body img {
+		max-width: 100%;
+	}
+
+	.note-backlinks {
+		border-top: solid 1px _palette(border);
+		margin-top: _size(element-margin);
+		padding-top: _size(element-margin);
+	}
+
+	.garden-intro,
+	.garden-empty {
+		max-width: 75ch;
+	}
+
+	.garden-list {
+		list-style: none;
+		padding-left: 0;
+
+		li {
+			padding-left: 0;
+			margin-bottom: 0.5em;
+		}
+
+		.note-stage,
+		.note-date {
+			color: _palette(fg-light);
+			font-size: 0.85em;
+			margin-left: 0.75em;
+		}
+	}

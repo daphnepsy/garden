@@ -1,0 +1,12 @@
+_site/
+.sass-cache/
+.jekyll-metadata
+*.gem
+**/.DS_Store
+.bundle/
+vendor/
+
+# Obsidian: keep the shared vault settings, not per-device state
+.obsidian/workspace*.json
+.obsidian/cache
+.trash/

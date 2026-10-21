@@ -1,0 +1,36 @@
+---
+layout: default
+---
+<!-- Main -->
+<div id="main" class="alt">
+
+	<!-- One -->
+	<section id="one">
+		<div class="inner">
+			<p class="note-back"><a href="{{ '/' | relative_url }}">&larr; Garden</a></p>
+			<header class="major">
+				<h1>{{ page.title }}</h1>
+			</header>
+			<p class="note-meta">
+				{% include note-stage.html stage=page.stage %}
+				{% if page.planted %}<span>Planted {{ page.planted | date: '%b %-d, %Y' }}</span>{% endif %}
+				{% if page.tended %}<span>Last tended {{ page.tended | date: '%b %-d, %Y' }}</span>{% endif %}
+			</p>
+			<div class="project-body note-body">
+				{{ content }}
+			</div>
+
+			{% if page.backlinks.size > 0 %}
+			<aside class="note-backlinks">
+				<h4>Links to this note</h4>
+				<ul>
+					{% for note in page.backlinks %}
+					<li><a href="{{ note.url | relative_url }}">{{ note.title }}</a></li>
+					{% endfor %}
+				</ul>
+			</aside>
+			{% endif %}
+		</div>
+	</section>
+
+</div>

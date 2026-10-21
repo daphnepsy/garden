@@ -1,0 +1,48 @@
+# site settings
+title: Daphne's Garden
+subtitle:
+email: daphne.poonsy@gmail.com
+description: '' # empty, so the homepage tab title is just the site title
+url: https://garden.daphnepoon.com # matches CNAME
+baseurl:
+
+# footer links (icon is a Font Awesome 4 class)
+social:
+  - name: Home
+    url: https://daphnepoon.com
+    icon: fa-home
+  - name: Twitter
+    url: https://twitter.com/daphneeep
+    icon: fa-twitter
+  - name: GitHub
+    url: https://github.com/daphnepsy
+    icon: fa-github
+  - name: LinkedIn
+    url: https://www.linkedin.com/in/daphne-poon
+    icon: fa-linkedin
+
+# notes, written in Obsidian (see README)
+collections:
+  notes:
+    output: true
+    permalink: /:name
+
+defaults:
+  - scope:
+      type: notes
+    values:
+      layout: note
+
+# build settings
+markdown: kramdown
+plugins:
+  - jekyll-seo-tag
+sass:
+  style: compressed
+exclude:
+  - README.md
+  - LICENSE.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - _templates

@@ -94,7 +94,6 @@ updated: 2026-10-22
         - Sumerian script
         - Used for book keeping
         - Pictographs originally evolved into cuneiform script
-
 - Babylonians
     - Rose to prominence after the Third Dynasty of Ur collapsed in 2000BC; Mesopotamia split into a number of small city-states
     - King Hammurabi (1792-1750 BC)

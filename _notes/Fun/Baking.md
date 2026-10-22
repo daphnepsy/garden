@@ -3,8 +3,7 @@ title: "Baking"
 added: 2026-10-21
 updated: 2026-10-21
 ---
-- [My baking account](https://www.instagram.com/daphgetsbaked/)
-
+I love baking. For me it is like college chem lab: you are locked tf in trying to get it done, it's surprisingly meditative, and my brain is only able to focus on the baking (for hours at a time). Except unlike chem lab the end product is delicious. People will love you for bringing them cookies. Once in a while I'll post goodies on [my baking account](https://www.instagram.com/daphgetsbaked/).
 ## Things I wanna make
 
 - Macarons

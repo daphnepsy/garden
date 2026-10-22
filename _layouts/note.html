@@ -7,7 +7,7 @@ layout: default
 	<!-- One -->
 	<section id="one">
 		<div class="inner">
-			<p class="note-back"><a href="{{ '/' | relative_url }}">&larr; Garden</a></p>
+			<p class="note-back"><a href="{{ '/' | relative_url }}">&larr; Garden</a>{% if page.folder and page.folder != '' %} / <a href="{{ '/' | relative_url }}#{{ page.folder | slugify }}">{{ page.folder | replace: '/', ' / ' }}</a>{% endif %}</p>
 			<header class="major">
 				<h1>{{ page.title }}</h1>
 			</header>

@@ -1,5 +1,5 @@
-// Garden editor (/editor/): edit notes in _notes/ through the GitHub API and
-// preview them inside the real note layout (/editor/preview/).
+// Garden editor (/editor/): edit and organize notes in _notes/ through the
+// GitHub API, and preview them inside the real note layout (/editor/preview/).
 //
 // The preview follows the same rules as _plugins/garden.rb and the site's
 // Markdown settings, so keep the two in step when either changes.
@@ -17,15 +17,17 @@
 	const $ = (id) => document.getElementById(id);
 	const el = {
 		signin: $('signin'), signinForm: $('signin-form'), token: $('token'), signinError: $('signin-error'),
-		app: $('app'), picker: $('note-picker'), newNote: $('new-note'), status: $('status'),
+		app: $('app'), tree: $('tree'), newNote: $('new-note'), newFolder: $('new-folder'), status: $('status'),
 		viewLive: $('view-live'), deleteNote: $('delete-note'), signOut: $('sign-out'), save: $('save'),
-		title: $('title'), added: $('added'), updated: $('updated'), bump: $('bump'), draft: $('draft'),
+		title: $('title'), folder: $('folder'), added: $('added'), updated: $('updated'), bump: $('bump'), draft: $('draft'),
 		body: $('body'), fileName: $('file-name'), preview: $('preview'), panes: document.querySelector('.panes')
 	};
 
 	let token = null;
-	let notes = [];        // [{ name, path }] from _notes/
-	let current = null;    // { path, sha, frontMatter, savedText }
+	let notes = [];               // [{ path, name, folder, sha }] for every note in _notes/
+	let newFolders = new Set();   // folders made here that have no notes yet
+	let selectedFolder = '';      // where "New note" puts a note
+	let current = null;           // { path, folder, sha, frontMatter, savedText }
 	let busy = false;
 
 	// ---------- small helpers ----------
@@ -59,12 +61,34 @@
 		return name.replace(/[^\p{M}\p{L}\p{Nd}]+/gu, '-').replace(/^-|-$/g, '').toLowerCase();
 	}
 
-	function noteUrl(name) {
-		return baseurl + '/' + slugify(name);
+	// "_notes/Some Folder/My Note.md" -> "Some Folder/My Note"
+	function notePath(path) {
+		return path.replace(/^_notes\//, '').replace(/\.md$/, '');
+	}
+
+	// the URL the site gives a note (see _plugins/garden.rb): /some-folder/my-note
+	function noteUrl(path) {
+		return '/' + notePath(path).split('/').map(slugify).join('/');
 	}
 
 	function baseName(path) {
 		return path.split('/').pop().replace(/\.md$/, '');
+	}
+
+	function folderOf(path) {
+		return notePath(path).split('/').slice(0, -1).join('/');
+	}
+
+	function pathFor(folder, name) {
+		return '_notes/' + (folder ? folder + '/' : '') + name + '.md';
+	}
+
+	function cleanName(name) {
+		return name.replace(/[\\/:*?"<>|#^[\]]/g, '').replace(/\s+/g, ' ').trim();
+	}
+
+	function cleanFolder(folder) {
+		return folder.split('/').map(cleanName).filter(Boolean).join('/');
 	}
 
 	function encodePath(path) {
@@ -128,6 +152,60 @@
 		return github('/contents/' + encodePath(path), { method: 'PUT', body: JSON.stringify(body) });
 	}
 
+	function conflict(message) {
+		const error = new Error(message);
+		error.conflict = true;
+		return error;
+	}
+
+	// The latest commit on the branch and every file in it
+	async function head() {
+		const ref = await github('/git/ref/heads/' + branch);
+		const commit = await github('/git/commits/' + ref.object.sha);
+		const tree = await github('/git/trees/' + commit.tree.sha + '?recursive=1');
+		return { commit: ref.object.sha, tree: commit.tree.sha, files: tree.tree.filter((f) => f.type === 'blob') };
+	}
+
+	function notesFrom(files) {
+		return files
+			.filter((f) => f.path.startsWith('_notes/') && f.path.endsWith('.md'))
+			.map((f) => ({ path: f.path, name: baseName(f.path), folder: folderOf(f.path), sha: f.sha }))
+			.sort((a, b) => a.path.localeCompare(b.path));
+	}
+
+	// Makes one commit out of several file changes, so a move (add + delete) is a
+	// single step. Each change is { path, content } to write text, { path, sha }
+	// to reuse an existing file's contents, or { path, sha: null } to delete.
+	// `check(files)` runs against the latest files first and can throw to stop.
+	async function commitChanges(changes, message, check) {
+		for (let attempt = 0; ; attempt++) {
+			const latest = await head();
+			if (check) check(latest.files);
+			const tree = await github('/git/trees', {
+				method: 'POST',
+				body: JSON.stringify({
+					base_tree: latest.tree,
+					tree: changes.map((c) => Object.assign({ path: c.path, mode: '100644', type: 'blob' },
+						'content' in c ? { content: c.content } : { sha: c.sha }))
+				})
+			});
+			const commit = await github('/git/commits', {
+				method: 'POST',
+				body: JSON.stringify({ message, tree: tree.sha, parents: [latest.commit] })
+			});
+			try {
+				await github('/git/refs/heads/' + branch, { method: 'PATCH', body: JSON.stringify({ sha: commit.sha }) });
+			} catch (e) {
+				// something else was pushed meanwhile: start again from the new latest commit
+				if (e.status === 422 && attempt === 0) continue;
+				throw e;
+			}
+			const files = (await github('/git/trees/' + tree.sha + '?recursive=1')).tree.filter((f) => f.type === 'blob');
+			notes = notesFrom(files);
+			return files;
+		}
+	}
+
 	// ---------- front matter ----------
 	// Kept as raw lines so fields the editor doesn't know about are left alone.
 
@@ -182,7 +260,7 @@
 	}
 
 	function isDirty() {
-		return current && composeNote() !== current.savedText;
+		return current && (composeNote() !== current.savedText || (current.path && el.folder.value !== current.folder));
 	}
 
 	// ---------- Markdown, matching the site ----------
@@ -229,7 +307,12 @@
 	}
 
 	function rewriteWikilinks(text) {
-		const byName = new Map(notes.map((n) => [n.name.trim().toLowerCase(), n]));
+		// like the site, a link can name just the note or its folder too
+		const byName = new Map();
+		notes.forEach((n) => {
+			if (!byName.has(n.name.trim().toLowerCase())) byName.set(n.name.trim().toLowerCase(), n);
+		});
+		notes.forEach((n) => byName.set(notePath(n.path).toLowerCase(), n));
 		return text.split(CODE).map((part, i) => i % 2 ? part : part.replace(WIKILINK, (all, embed, inner) => {
 			const pipe = inner.indexOf('|');
 			const target = (pipe < 0 ? inner : inner.slice(0, pipe)).trim().replace(/\\$/, '').trim();
@@ -247,7 +330,7 @@
 			const text = escapeHtml(label || name);
 			if (note) {
 				const anchor = heading ? '#' + slugify(heading) : '';
-				return '<a class="internal-link" href="' + noteUrl(note.name) + anchor + '">' + text + '</a>';
+				return '<a class="internal-link" href="' + baseurl + noteUrl(note.path) + anchor + '">' + text + '</a>';
 			}
 			return '<span class="internal-link unplanted" title="Not planted yet">' + text + '</span>';
 		})).join('');
@@ -307,6 +390,18 @@
 
 		doc.querySelector('header.major h1').textContent = el.title.value.trim() || 'Untitled';
 
+		// "← Garden / Folder", as on the site
+		const back = doc.querySelector('.note-back');
+		const garden = back.querySelector('a');
+		back.textContent = '';
+		back.appendChild(garden);
+		if (el.folder.value) {
+			const link = doc.createElement('a');
+			link.href = baseurl + '/#' + slugify(el.folder.value);
+			link.textContent = el.folder.value.replace(/\//g, ' / ');
+			back.append(' / ', link);
+		}
+
 		const meta = doc.querySelector('.note-meta');
 		meta.textContent = '';
 		[['Added', el.added.value], ['Updated', el.updated.value]].forEach(([label, value]) => {
@@ -343,26 +438,102 @@
 	el.preview.addEventListener('load', initPreview);
 	initPreview(); // in case it loaded before this script ran
 
-	// ---------- notes ----------
+	// ---------- notes and folders ----------
 
-	function fillPicker() {
-		el.picker.textContent = '';
-		if (current && !current.path) el.picker.appendChild(new Option('New note (not saved yet)', ''));
-		notes.forEach((n) => el.picker.appendChild(new Option(n.name, n.path)));
-		el.picker.value = current ? current.path || '' : '';
+	function allFolders() {
+		const folders = new Set(newFolders);
+		notes.forEach((n) => {
+			// "A/B" also means there's an "A"
+			const parts = n.folder ? n.folder.split('/') : [];
+			parts.forEach((_, i) => folders.add(parts.slice(0, i + 1).join('/')));
+		});
+		return [...folders].sort((a, b) => a.localeCompare(b));
 	}
 
-	async function loadNoteList() {
-		let files = [];
-		try {
-			files = await github('/contents/_notes?ref=' + branch);
-		} catch (e) {
-			if (e.status !== 404) throw e;
-		}
-		notes = files
-			.filter((f) => f.type === 'file' && f.name.endsWith('.md'))
-			.map((f) => ({ name: baseName(f.path), path: f.path }))
-			.sort((a, b) => a.name.localeCompare(b.name));
+	function fillFolderPicker() {
+		const folders = allFolders();
+		const value = el.folder.value || (current && current.folder) || '';
+		el.folder.textContent = '';
+		el.folder.appendChild(new Option('Top level', ''));
+		folders.forEach((f) => el.folder.appendChild(new Option(f.replace(/\//g, ' / '), f)));
+		el.folder.appendChild(new Option('New folder…', '\u0000new'));
+		el.folder.value = folders.includes(value) ? value : '';
+	}
+
+	// The sidebar: each folder is a drop target, each note can be dragged
+	function renderTree() {
+		el.tree.textContent = '';
+		['', ...allFolders()].forEach((folder) => {
+			const group = document.createElement('div');
+			group.className = 'folder' + (folder === selectedFolder ? ' selected' : '');
+			group.dataset.folder = folder;
+
+			const head = document.createElement('button');
+			head.type = 'button';
+			head.className = 'folder-name';
+			const depth = folder ? folder.split('/').length : 0;
+			head.style.paddingLeft = (0.5 + depth * 0.9) + 'rem';
+			head.textContent = folder ? folder.split('/').pop() : 'Garden';
+			head.title = folder ? 'Folder “' + folder + '”' : 'Top level of the garden';
+			head.addEventListener('click', () => { selectedFolder = folder; renderTree(); });
+			group.appendChild(head);
+
+			const list = document.createElement('ul');
+			notes.filter((n) => n.folder === folder).forEach((n) => {
+				const item = document.createElement('li');
+				const link = document.createElement('button');
+				link.type = 'button';
+				link.className = 'note' + (current && current.path === n.path ? ' current' : '');
+				link.style.paddingLeft = (1.4 + depth * 0.9) + 'rem';
+				link.textContent = n.name;
+				link.draggable = true;
+				link.addEventListener('dragstart', (event) => {
+					event.dataTransfer.setData('text/x-garden-note', n.path);
+					event.dataTransfer.effectAllowed = 'move';
+				});
+				link.addEventListener('click', () => {
+					if (!current || current.path !== n.path) {
+						if (confirmDiscard()) openNote(n.path).catch(showError('open the note'));
+					}
+					showPane('edit');
+				});
+				item.appendChild(link);
+				list.appendChild(item);
+			});
+			if (!list.children.length && folder) {
+				const empty = document.createElement('li');
+				empty.className = 'empty';
+				empty.textContent = 'Drag a note here';
+				list.appendChild(empty);
+			}
+			group.appendChild(list);
+
+			group.addEventListener('dragover', (event) => {
+				if (!event.dataTransfer.types.includes('text/x-garden-note')) return;
+				event.preventDefault();
+				event.stopPropagation();
+				group.classList.add('drop');
+			});
+			group.addEventListener('dragleave', (event) => {
+				if (!group.contains(event.relatedTarget)) group.classList.remove('drop');
+			});
+			group.addEventListener('drop', (event) => {
+				event.preventDefault();
+				group.classList.remove('drop');
+				const path = event.dataTransfer.getData('text/x-garden-note');
+				if (path) moveNote(path, folder);
+			});
+			el.tree.appendChild(group);
+		});
+	}
+
+	function refreshLists() {
+		fillFolderPicker();
+		renderTree();
+	}
+
+	async function loadNotes() {
+		notes = notesFrom((await head()).files);
 	}
 
 	function showNote(note) {
@@ -373,40 +544,78 @@
 		el.updated.value = isoDate(getField(fm, 'updated'));
 		el.draft.checked = getField(fm, 'published') === 'false';
 		el.body.value = note.body;
+		el.folder.value = '';
+		refreshLists();
+		el.folder.value = note.folder;
 		current.savedText = composeNote();
-		el.fileName.textContent = note.path || '_notes/<title>.md';
-		el.deleteNote.hidden = !note.path;
-		updateLiveLink();
-		fillPicker();
+		showSaved();
 		renderPreview();
+	}
+
+	// file name, delete button and live link for the note as last saved
+	function showSaved() {
+		el.fileName.textContent = current.path || pathFor(el.folder.value, '<title>');
+		el.deleteNote.hidden = !current.path;
+		updateLiveLink();
 	}
 
 	function updateLiveLink() {
 		const live = current && current.path && !el.draft.checked;
 		el.viewLive.hidden = !live;
-		if (live) el.viewLive.href = siteUrl + '/' + slugify(baseName(current.path));
+		if (live) el.viewLive.href = siteUrl + noteUrl(current.path);
 	}
 
 	async function openNote(path) {
 		setStatus('Loading…');
-		const file = await github('/contents/' + encodePath(path) + '?ref=' + branch);
-		const { frontMatter, body } = splitNote(fromBase64(file.content));
-		showNote({ path, sha: file.sha, frontMatter, body });
+		const note = notes.find((n) => n.path === path);
+		const blob = await github('/git/blobs/' + note.sha);
+		const { frontMatter, body } = splitNote(fromBase64(blob.content));
+		showNote({ path, folder: note.folder, sha: note.sha, frontMatter, body });
 		setStatus('');
 	}
 
 	function newNote() {
 		const d = today();
-		showNote({ path: null, sha: null, frontMatter: ['title: ""', 'added: ' + d, 'updated: ' + d], body: '\n' });
+		showNote({ path: null, folder: selectedFolder, sha: null, frontMatter: ['title: ""', 'added: ' + d, 'updated: ' + d], body: '\n' });
+		showPane('edit');
 		el.title.focus();
+	}
+
+	function askForFolder() {
+		const name = prompt('Name the new folder (use / to put it inside another folder, like “Food/Baking”):');
+		const folder = name ? cleanFolder(name) : '';
+		if (!folder) return null;
+		newFolders.add(folder);
+		return folder;
 	}
 
 	function confirmDiscard() {
 		return !isDirty() || confirm('You have unsaved changes. Discard them?');
 	}
 
-	function fileNameFor(title) {
-		return title.replace(/[\\/:*?"<>|#^[\]]/g, '').replace(/\s+/g, ' ').trim();
+	function showError(action) {
+		return (e) => {
+			if (e.message === 'unauthorized') return;
+			setStatus(e.conflict ? e.message : 'Couldn’t ' + action + ': ' + e.message, 'error');
+		};
+	}
+
+	// stops a commit if the note changed elsewhere (e.g. pushed from Obsidian) since it was opened
+	function unchangedSince(path, sha) {
+		return (files) => {
+			const file = files.find((f) => f.path === path);
+			if (!file || file.sha !== sha) {
+				throw conflict('“' + baseName(path) + '” changed somewhere else (Obsidian?) since you opened it. Copy your edits, then reopen the note.');
+			}
+		};
+	}
+
+	function notTaken(path, except) {
+		return (files) => {
+			if (path !== except && files.some((f) => f.path.toLowerCase() === path.toLowerCase())) {
+				throw conflict('There’s already a note called “' + baseName(path) + '” in ' + (folderOf(path) || 'the top level') + '.');
+			}
+		};
 	}
 
 	async function save() {
@@ -417,69 +626,96 @@
 			el.title.focus();
 			return;
 		}
-
-		let path = current.path;
-		if (!path) {
-			const name = fileNameFor(title);
-			if (!name) return setStatus('That title has no usable characters for a file name.', 'error');
-			if (notes.some((n) => n.name.toLowerCase() === name.toLowerCase())) {
-				return setStatus('A note called “' + name + '” already exists.', 'error');
-			}
-			path = '_notes/' + name + '.md';
-		}
-
+		const name = current.path ? baseName(current.path) : cleanName(title);
+		if (!name) return setStatus('That title has no usable characters for a file name.', 'error');
 		if (current.path && !isDirty()) return setStatus('No changes to save.');
+
+		const folder = el.folder.value;
+		const path = pathFor(folder, name);
+		const moved = current.path && path !== current.path;
 		if (el.bump.checked) el.updated.value = today();
 		const text = composeNote();
+		const changes = [{ path, content: text }];
+		if (moved) changes.push({ path: current.path, sha: null });
+		const message = !current.path ? 'Add ' + title : moved ? 'Update ' + title + ' and move it to ' + (folder || 'the top level') : 'Update ' + title;
 
 		busy = true;
 		el.save.disabled = true;
 		setStatus('Saving…');
 		try {
-			const result = await putFile(path, toBase64(text), (current.path ? 'Update ' : 'Add ') + title, current.sha);
-			const isNew = !current.path;
+			await commitChanges(changes, message, (files) => {
+				if (current.path) unchangedSince(current.path, current.sha)(files);
+				notTaken(path, current.path)(files);
+			});
+			newFolders.delete(folder);
 			current.path = path;
-			current.sha = result.content.sha;
+			current.folder = folder;
+			current.sha = notes.find((n) => n.path === path).sha;
 			current.frontMatter = splitNote(text).frontMatter;
 			current.savedText = text;
-			if (isNew) {
-				notes.push({ name: baseName(path), path });
-				notes.sort((a, b) => a.name.localeCompare(b.name));
-			}
-			el.fileName.textContent = path;
-			el.deleteNote.hidden = false;
-			fillPicker();
-			updateLiveLink();
+			refreshLists();
+			showSaved();
 			setStatus(el.draft.checked ? 'Saved as a draft (not on the site).' : 'Saved. Live in a minute or two.', 'ok');
 			renderPreview();
 		} catch (e) {
-			if (e.status === 409 || e.status === 422) {
-				setStatus('This note changed somewhere else (Obsidian?) since you opened it. Copy your edits, then reopen the note.', 'error');
-			} else if (e.message !== 'unauthorized') {
-				setStatus('Couldn’t save: ' + e.message, 'error');
-			}
+			showError('save')(e);
 		} finally {
 			busy = false;
 			el.save.disabled = false;
 		}
 	}
 
+	async function moveNote(path, folder) {
+		const note = notes.find((n) => n.path === path);
+		if (!note || note.folder === folder || busy) return;
+
+		// with unsaved edits, the move goes in with the next save
+		if (current && current.path === path && isDirty()) {
+			el.folder.value = folder;
+			showSaved();
+			renderPreview();
+			setStatus('Moved to ' + (folder || 'the top level') + ' when you save.', 'ok');
+			return;
+		}
+
+		const to = pathFor(folder, note.name);
+		busy = true;
+		setStatus('Moving…');
+		try {
+			await commitChanges([{ path: to, sha: note.sha }, { path, sha: null }],
+				'Move ' + note.name + ' to ' + (folder || 'the top level'),
+				(files) => { unchangedSince(path, note.sha)(files); notTaken(to, path)(files); });
+			newFolders.delete(folder);
+			if (current && current.path === path) {
+				current.path = to;
+				current.folder = folder;
+				el.folder.value = folder;
+				current.savedText = composeNote();
+				showSaved();
+				renderPreview();
+			}
+			refreshLists();
+			setStatus('Moved “' + note.name + '” to ' + (folder || 'the top level') + '. Its link is now ' + noteUrl(to), 'ok');
+		} catch (e) {
+			showError('move the note')(e);
+		} finally {
+			busy = false;
+		}
+	}
+
 	async function deleteCurrent() {
 		if (!current || !current.path || busy) return;
 		if (!confirm('Delete “' + (el.title.value || baseName(current.path)) + '”? It will be removed from the site.')) return;
+		const path = current.path;
 		busy = true;
 		setStatus('Deleting…');
 		try {
-			await github('/contents/' + encodePath(current.path), {
-				method: 'DELETE',
-				body: JSON.stringify({ message: 'Delete ' + baseName(current.path), sha: current.sha, branch })
-			});
-			notes = notes.filter((n) => n.path !== current.path);
+			await commitChanges([{ path, sha: null }], 'Delete ' + baseName(path), unchangedSince(path, current.sha));
 			current = null;
 			if (notes.length) await openNote(notes[0].path); else newNote();
 			setStatus('Deleted.', 'ok');
 		} catch (e) {
-			if (e.message !== 'unauthorized') setStatus('Couldn’t delete: ' + e.message, 'error');
+			showError('delete')(e);
 		} finally {
 			busy = false;
 		}
@@ -545,7 +781,7 @@
 		el.app.hidden = false;
 		setStatus('Loading notes…');
 		try {
-			await loadNoteList();
+			await loadNotes();
 			if (notes.length) await openNote(notes[0].path); else newNote();
 		} catch (e) {
 			if (e.message !== 'unauthorized') setStatus('Couldn’t load notes: ' + e.message, 'error');
@@ -587,12 +823,28 @@
 	});
 	el.draft.addEventListener('change', updateLiveLink);
 
-	el.picker.addEventListener('change', () => {
-		const path = el.picker.value;
-		if (!confirmDiscard()) { fillPicker(); return; }
-		if (path) openNote(path).catch((e) => setStatus('Couldn’t open the note: ' + e.message, 'error'));
+	el.folder.addEventListener('change', () => {
+		if (el.folder.value === '\u0000new') {
+			const folder = askForFolder();
+			el.folder.value = current ? current.folder : '';
+			if (folder) {
+				refreshLists();
+				el.folder.value = folder;
+			}
+		}
+		if (current && !current.path) selectedFolder = el.folder.value;
+		showSaved();
+		renderTree();
+		schedulePreview();
 	});
 	el.newNote.addEventListener('click', () => { if (confirmDiscard()) newNote(); });
+	el.newFolder.addEventListener('click', () => {
+		const folder = askForFolder();
+		if (!folder) return;
+		selectedFolder = folder;
+		refreshLists();
+		setStatus('Folder “' + folder + '” made. Drag notes into it or make a new note there. (Folders are saved once they hold a note.)', 'ok');
+	});
 	el.save.addEventListener('click', save);
 	el.deleteNote.addEventListener('click', deleteCurrent);
 	el.signOut.addEventListener('click', () => { if (confirmDiscard()) signOut(); });
@@ -608,11 +860,14 @@
 		if (isDirty()) event.preventDefault();
 	});
 
-	document.querySelectorAll('.tabs button').forEach((tab) => tab.addEventListener('click', () => {
-		document.querySelectorAll('.tabs button').forEach((t) => t.classList.toggle('active', t === tab));
-		el.panes.dataset.pane = tab.dataset.pane;
-		if (tab.dataset.pane === 'preview') renderPreview();
-	}));
+	// small screens show one pane at a time
+	function showPane(pane) {
+		document.querySelectorAll('.tabs button').forEach((t) => t.classList.toggle('active', t.dataset.pane === pane));
+		el.panes.dataset.pane = pane;
+		if (pane === 'preview') renderPreview();
+	}
+
+	document.querySelectorAll('.tabs button').forEach((tab) => tab.addEventListener('click', () => showPane(tab.dataset.pane)));
 
 	token = storage('get');
 	if (token) start(); else signOut();

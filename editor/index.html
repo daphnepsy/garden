@@ -38,8 +38,6 @@ permalink: /editor/
 	<!-- The editor -->
 	<div id="app" class="app" hidden>
 		<header class="bar">
-			<select id="note-picker" aria-label="Note"></select>
-			<button id="new-note" type="button">New note</button>
 			<span id="status" class="status" role="status"></span>
 			<span class="spacer"></span>
 			<a id="view-live" class="link" target="_blank" rel="noopener" hidden>View live ↗</a>
@@ -49,14 +47,24 @@ permalink: /editor/
 		</header>
 
 		<nav class="tabs" aria-label="Pane">
+			<button type="button" data-pane="notes">Notes</button>
 			<button type="button" data-pane="edit" class="active">Edit</button>
 			<button type="button" data-pane="preview">Preview</button>
 		</nav>
 
 		<main class="panes" data-pane="edit">
+			<aside class="notes">
+				<div class="notes-actions">
+					<button id="new-note" type="button">New note</button>
+					<button id="new-folder" type="button">New folder</button>
+				</div>
+				<div id="tree" class="tree"></div>
+				<p class="hint">Drag a note onto a folder to move it. Click a folder to put new notes there.</p>
+			</aside>
 			<section class="edit">
 				<div class="fields">
 					<label class="title">Title <input id="title" type="text" /></label>
+					<label>Folder <select id="folder"></select></label>
 					<label>Added <input id="added" type="date" /></label>
 					<label>Updated <input id="updated" type="date" /></label>
 					<label class="check"><input id="bump" type="checkbox" checked /> Set “Updated” to today when saving</label>

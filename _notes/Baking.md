@@ -1,11 +1,11 @@
 ---
-title: Baking Bread
+title: "Baking"
 added: 2026-10-21
 updated: 2026-10-21
 ---
-[My Baking Account](https://www.instagram.com/daphgetsbaked/)
+- [My baking account](https://www.instagram.com/daphgetsbaked/)
 
-**Things I wanna make:**
+## Things I wanna make
 
 - Macarons
 - German bread (seeded!)
@@ -27,7 +27,7 @@ updated: 2026-10-21
 - Coffee caramel crème brûlée
 - Levain-style cookie
 
-**Things I've made:**
+## Things I've made
 
 - Russian honey cake
 - Chantilly cake

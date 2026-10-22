@@ -11,7 +11,8 @@
 # `added` and `updated` dates are read as dates even when quoted, so the
 # garden can sort by them. It also gives every note a `backlinks` list (the notes that link to it), and
 # lets a list, heading or quote start right under a line of text, as Obsidian
-# does (the site's Markdown otherwise needs a blank line before them).
+# does (the site's Markdown otherwise needs a blank line before them). Tables
+# with only a header row (like a row of photos) are tables too, as in Obsidian.
 # Links are matched on file name (or folder/name), case-insensitively, like Obsidian does.
 
 module Garden
@@ -69,6 +70,26 @@ module Garden
     end.join
   end
 
+  TABLE_DIVIDER = /\A\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*\z/
+  EMPTY_ROW_MARK = "GARDEN-EMPTY-ROW"
+
+  # kramdown only sees a table when it has a row under the | --- | divider, so
+  # a header-only table gets a placeholder row, which is removed after rendering
+  def self.complete_tables(markdown)
+    lines = markdown.lines
+    in_code = false
+    lines.each_with_index.flat_map do |line, i|
+      in_code = !in_code if line.match?(FENCE)
+      next_line = lines[i + 1].to_s
+      header_only = !in_code && line.include?("|") && line.match?(TABLE_DIVIDER) && i.positive? &&
+        lines[i - 1].include?("|") && !next_line.include?("|")
+      next [line] unless header_only
+
+      columns = line.strip.delete_prefix("|").delete_suffix("|").split("|").size
+      [line.end_with?("\n") ? line : "#{line}\n", "|#{" #{EMPTY_ROW_MARK} |" * columns}\n"]
+    end.join
+  end
+
   def self.parse(inner)
     # inside an Obsidian table the pipe is escaped: [[Note\|label]]
     target, label = inner.split("|", 2).map(&:strip)
@@ -112,7 +133,7 @@ module Garden
     notes = notes_by_name(site)
     baseurl = site.config["baseurl"].to_s
 
-    doc.content = rewrite(separate_blocks(doc.content)) do |embed, inner|
+    doc.content = rewrite(complete_tables(separate_blocks(doc.content))) do |embed, inner|
       name, heading, label = parse(inner)
       ext = File.extname(name).delete(".").downcase
 
@@ -125,5 +146,9 @@ module Garden
         %(<span class="internal-link unplanted" title="Not planted yet">#{label || name}</span>)
       end
     end
+  end
+
+  Jekyll::Hooks.register :notes, :post_render do |doc|
+    doc.output = doc.output.gsub(%r!\s*<tbody>\s*<tr>\s*(<td>#{EMPTY_ROW_MARK}</td>\s*)+</tr>\s*</tbody>!, "")
   end
 end

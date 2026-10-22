@@ -3,7 +3,7 @@ title: Garden
 layout: landing
 ---
 
-{% assign notes = site.notes | sort: 'tended', 'first' | reverse %}
+{% assign notes = site.notes | sort: 'updated', 'first' | reverse %}
 <p class="garden-intro">A small collection of notes and thoughts.</p>
 
 {% if notes.size == 0 %}
@@ -13,7 +13,7 @@ layout: landing
 	{% for note in notes %}
 	<li>
 		<a href="{{ note.url | relative_url }}">{{ note.title }}</a>
-		{% if note.tended %}<span class="note-date">{{ note.tended | date: '%b %Y' }}</span>{% endif %}
+		{% if note.updated %}<span class="note-date">{{ note.updated | date: '%b %Y' }}</span>{% endif %}
 	</li>
 	{% endfor %}
 </ul>

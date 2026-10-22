@@ -4,7 +4,8 @@
 #   ![[photo.png]]                               -> image from assets/garden/
 #   [[Note that doesn't exist]]                  -> plain text, styled as "unplanted"
 #
-# It also gives every note a `backlinks` list (the notes that link to it), and
+# `added` and `updated` dates are read as dates even when quoted, so the
+# garden can sort by them. It also gives every note a `backlinks` list (the notes that link to it), and
 # lets a list, heading or quote start right under a line of text, as Obsidian
 # does (the site's Markdown otherwise needs a blank line before them).
 # Links are matched on file name, case-insensitively, like Obsidian does.
@@ -63,9 +64,19 @@ module Garden
     [name.to_s, heading, label]
   end
 
+  def self.to_date(value)
+    return value if value.nil? || value.is_a?(Date) || value.is_a?(Time)
+    Date.parse(value.to_s)
+  rescue ArgumentError
+    nil
+  end
+
   Jekyll::Hooks.register :site, :post_read do |site|
     notes = notes_by_name(site)
-    notes.each_value { |doc| doc.data["backlinks"] = [] }
+    notes.each_value do |doc|
+      doc.data["backlinks"] = []
+      %w[added updated].each { |field| doc.data[field] = to_date(doc.data[field]) }
+    end
 
     notes.each_value do |doc|
       linked = []

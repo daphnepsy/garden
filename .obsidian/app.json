@@ -14,6 +14,7 @@
     "vendor/",
     "assets/css/",
     "assets/fonts/",
-    "assets/js/"
+    "assets/js/",
+    "editor/"
   ]
 }

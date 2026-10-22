@@ -1,7 +1,7 @@
 ---
 title: Baking Bread
-planted: 2026-10-21
-tended: 2026-10-21
+added: 2026-10-21
+updated: 2026-10-21
 ---
 [My Baking Account](https://www.instagram.com/daphgetsbaked/)
 

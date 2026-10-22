@@ -12,8 +12,8 @@ layout: default
 				<h1>{{ page.title }}</h1>
 			</header>
 			<p class="note-meta">
-				{% if page.planted %}<span>Added {{ page.planted | date: '%b %-d, %Y' }}</span>{% endif %}
-				{% if page.tended %}<span>Updated {{ page.tended | date: '%b %-d, %Y' }}</span>{% endif %}
+				{% if page.added %}<span>Added {{ page.added | date: '%b %-d, %Y' }}</span>{% endif %}
+				{% if page.updated %}<span>Updated {{ page.updated | date: '%b %-d, %Y' }}</span>{% endif %}
 			</p>
 			<div class="project-body note-body">
 				{{ content }}

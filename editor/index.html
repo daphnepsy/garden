@@ -1,0 +1,85 @@
+---
+layout: null
+permalink: /editor/
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="robots" content="noindex" />
+	<title>Garden editor</title>
+	<link rel="icon" type="image/svg+xml" href="{{ '/assets/images/favicon.svg' | relative_url }}" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,600,600italic" />
+	<link rel="stylesheet" href="{{ '/assets/css/editor.css' | relative_url }}" />
+</head>
+<body>
+
+	<!-- Shown until a GitHub token is saved on this device -->
+	<section id="signin" class="signin" hidden>
+		<h1>Garden editor</h1>
+		<p>Edit your garden notes here and see exactly how they'll look on <a href="{{ '/' | relative_url }}">the site</a>. Saving commits the note to <a href="https://github.com/daphnepsy/garden">daphnepsy/garden</a>, and it goes live a minute or two later.</p>
+		<p>To save, the editor needs a GitHub token that can change that one repo:</p>
+		<ol>
+			<li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → new fine-grained token</a>.</li>
+			<li>Name it “Garden editor” and pick an expiration.</li>
+			<li>Under <b>Repository access</b>, choose <b>Only select repositories</b> → <b>daphnepsy/garden</b>.</li>
+			<li>Under <b>Permissions → Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
+			<li>Generate it and paste it below.</li>
+		</ol>
+		<form id="signin-form">
+			<input id="token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false" required />
+			<button type="submit">Save token</button>
+		</form>
+		<p class="hint">The token stays in this browser only. Use “Sign out” in the editor to remove it.</p>
+		<p id="signin-error" class="error" hidden></p>
+	</section>
+
+	<!-- The editor -->
+	<div id="app" class="app" hidden>
+		<header class="bar">
+			<select id="note-picker" aria-label="Note"></select>
+			<button id="new-note" type="button">New note</button>
+			<span id="status" class="status" role="status"></span>
+			<span class="spacer"></span>
+			<a id="view-live" class="link" target="_blank" rel="noopener" hidden>View live ↗</a>
+			<button id="delete-note" type="button" class="quiet">Delete</button>
+			<button id="sign-out" type="button" class="quiet">Sign out</button>
+			<button id="save" type="button" class="primary">Save</button>
+		</header>
+
+		<nav class="tabs" aria-label="Pane">
+			<button type="button" data-pane="edit" class="active">Edit</button>
+			<button type="button" data-pane="preview">Preview</button>
+		</nav>
+
+		<main class="panes" data-pane="edit">
+			<section class="edit">
+				<div class="fields">
+					<label class="title">Title <input id="title" type="text" /></label>
+					<label>Added <input id="added" type="date" /></label>
+					<label>Updated <input id="updated" type="date" /></label>
+					<label class="check"><input id="bump" type="checkbox" checked /> Set “Updated” to today when saving</label>
+					<label class="check"><input id="draft" type="checkbox" /> Draft (hidden from the site)</label>
+				</div>
+				<textarea id="body" spellcheck="true" placeholder="Write here. Use [[Note name]] to link to another note, and paste or drop an image to add it."></textarea>
+				<p class="hint">Saved as <code id="file-name"></code> · <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>S</kbd> saves</p>
+			</section>
+			<section class="preview">
+				<iframe id="preview" title="Preview" src="{{ '/editor/preview/' | relative_url }}" sandbox="allow-same-origin"></iframe>
+			</section>
+		</main>
+	</div>
+
+	<script>
+		window.GARDEN = {
+			repo: 'daphnepsy/garden',
+			branch: 'main',
+			baseurl: {{ site.baseurl | default: '' | jsonify }},
+			siteUrl: {{ site.url | append: site.baseurl | jsonify }}
+		};
+	</script>
+	<script src="{{ '/assets/js/markdown-it.min.js' | relative_url }}"></script>
+	<script src="{{ '/assets/js/editor.js' | relative_url }}"></script>
+</body>
+</html>

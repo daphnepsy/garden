@@ -13,7 +13,6 @@ layout: landing
 	{% for note in notes %}
 	<li>
 		<a href="{{ note.url | relative_url }}">{{ note.title }}</a>
-		{% include note-stage.html stage=note.stage %}
 		{% if note.tended %}<span class="note-date">{{ note.tended | date: '%b %Y' }}</span>{% endif %}
 	</li>
 	{% endfor %}

@@ -16,10 +16,6 @@
 		}
 	}
 
-	.note-stage {
-		white-space: nowrap;
-	}
-
 	.internal-link.unplanted {
 		color: _palette(fg-light);
 		opacity: 0.6;
@@ -50,7 +46,6 @@
 			margin-bottom: 0.5em;
 		}
 
-		.note-stage,
 		.note-date {
 			color: _palette(fg-light);
 			font-size: 0.85em;

@@ -1,6 +1,5 @@
 ---
 title: Baking Bread
-stage: seedling
 planted: 2026-10-21
 tended: 2026-10-21
 ---

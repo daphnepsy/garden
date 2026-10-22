@@ -1,7 +1,8 @@
 ---
 title: "{{title}}"
-stage: seedling
-planted: {{date:YYYY-MM-DD}}
-tended: {{date:YYYY-MM-DD}}
+added:
+  "{ date:YYYY-MM-DD }":
+updated:
+  "{ date:YYYY-MM-DD }":
 ---
 

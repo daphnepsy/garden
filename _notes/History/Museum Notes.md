@@ -18,23 +18,13 @@ updated: 2026-10-22
     - Had a Citadel
     - Human sacrifice was common
 - Toltecs
-    
     - Skilled warriors
-        
     - Based out of Tula
-        
     - Influenced Mayan and Aztec cultures
-        
     - Made cool sculptures
-        
 - Mexica/Aztecs
-    
     - Moved from Aztlan, migrated for 200 years.
-        
     - Claimed to descend from Toltecs
-        
-    - Settled in tenochtitlan, founded in 1325AD
-        
-    - Q: how did the Mexica tell time?
-        
+    - Settled in Tenochtitlan, founded in 1325AD
+    - Q: how did the Mexica tell time?        
     - City fell to Spaniards in 1521

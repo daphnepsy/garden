@@ -1,8 +1,9 @@
 // Garden editor (/editor/): edit and organize notes in _notes/ through the
 // GitHub API, and preview them inside the real note layout (/editor/preview/).
 //
-// The preview follows the same rules as _plugins/garden.rb and the site's
-// Markdown settings, so keep the two in step when either changes.
+// The preview renders Markdown with markdown-it, which follows CommonMark like
+// the site's renderer (commonmarker, _plugins/markdown.rb) and Obsidian, and
+// handles [[links]] the way _plugins/garden.rb does. Keep them in step.
 
 (function () {
 	'use strict';
@@ -265,42 +266,14 @@
 
 	// ---------- Markdown, matching the site ----------
 
-	const md = window.markdownit({ html: true, breaks: true, typographer: true });
-	// kramdown turns -- / --- / ... into dashes and an ellipsis, but leaves (c) etc alone
-	md.disable('replacements');
-	md.core.ruler.push('kramdown_typography', (state) => {
-		state.tokens.forEach((block) => {
-			(block.children || []).forEach((t) => {
-				if (t.type === 'text') t.content = t.content.replace(/---/g, '—').replace(/--/g, '–').replace(/\.\.\./g, '…');
-			});
-		});
-	});
+	// same options as _plugins/markdown.rb: raw HTML, line breaks kept, bare links linked
+	const md = window.markdownit({ html: true, breaks: true, linkify: true });
+	// ~~strike~~ as <del>, like commonmarker
+	md.renderer.rules.s_open = () => '<del>';
+	md.renderer.rules.s_close = () => '</del>';
 
 	const WIKILINK = /(!?)\[\[([^[\]]+?)\]\]/g;
 	const CODE = /(^```[\s\S]*?^```|^~~~[\s\S]*?^~~~|`[^`\n]+`)/m;
-	const LIST_ITEM = /^\s*([-*+]|\d+[.)])\s/;
-	const HEADING = /^#+\s/;
-	const QUOTE = /^\s*>/;
-	const FENCE = /^\s*(```|~~~)/;
-
-	function needsGap(line, prev) {
-		if (!prev.trim()) return false;
-		if (HEADING.test(line)) return true;
-		if (QUOTE.test(line)) return !QUOTE.test(prev);
-		if (LIST_ITEM.test(line)) return !LIST_ITEM.test(prev) && !/^[ \t]/.test(prev);
-		return false;
-	}
-
-	function separateBlocks(text) {
-		let inCode = false;
-		let prev = '';
-		return text.split('\n').map((line) => {
-			const gap = !inCode && needsGap(line, prev);
-			if (FENCE.test(line)) inCode = !inCode;
-			prev = line;
-			return gap ? '\n' + line : line;
-		}).join('\n');
-	}
 
 	function escapeHtml(text) {
 		return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -336,7 +309,8 @@
 		})).join('');
 	}
 
-	// kramdown's GFM task lists: "- [ ] thing" becomes a disabled checkbox
+	// GitHub-style task lists, as commonmarker renders them: "- [ ] thing"
+	// becomes a disabled checkbox
 	function addTaskLists(root) {
 		root.querySelectorAll('li').forEach((li) => {
 			const firstOf = (node) => [...node.childNodes].find((c) => c.nodeType !== 3 || c.nodeValue.trim());
@@ -346,36 +320,12 @@
 			if (!first || first.nodeType !== 3) return;
 			const m = /^\[([ xX])\]\s/.exec(first.nodeValue);
 			if (!m) return;
-			first.nodeValue = first.nodeValue.slice(m[0].length);
+			first.nodeValue = ' ' + first.nodeValue.slice(m[0].length);
 			const box = root.ownerDocument.createElement('input');
 			box.type = 'checkbox';
-			box.className = 'task-list-item-checkbox';
 			box.disabled = true;
 			box.defaultChecked = m[1] !== ' ';
 			holder.insertBefore(box, first);
-			li.parentElement.classList.add('task-list');
-		});
-		root.querySelectorAll('.task-list > li').forEach((li) => li.classList.add('task-list-item'));
-	}
-
-	// kramdown/rouge wrap code the way the site's CSS expects
-	function wrapCode(root) {
-		const doc = root.ownerDocument;
-		root.querySelectorAll('code').forEach((code) => {
-			if (code.parentElement.tagName !== 'PRE') code.className = 'language-plaintext highlighter-rouge';
-		});
-		root.querySelectorAll('pre').forEach((pre) => {
-			const code = pre.querySelector('code');
-			const lang = code && /language-(\S+)/.exec(code.className);
-			if (code) code.removeAttribute('class');
-			const outer = doc.createElement('div');
-			outer.className = 'language-' + (lang ? lang[1] : 'plaintext') + ' highlighter-rouge';
-			const inner = doc.createElement('div');
-			inner.className = 'highlight';
-			pre.className = 'highlight';
-			pre.replaceWith(outer);
-			outer.appendChild(inner);
-			inner.appendChild(pre);
 		});
 	}
 
@@ -412,9 +362,8 @@
 		});
 
 		const body = doc.querySelector('.note-body');
-		body.innerHTML = md.render(rewriteWikilinks(separateBlocks(el.body.value)));
+		body.innerHTML = md.render(rewriteWikilinks(el.body.value));
 		addTaskLists(body);
-		wrapCode(body);
 	}
 
 	function schedulePreview() {

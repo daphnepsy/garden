@@ -26,6 +26,22 @@
 		max-width: 100%;
 	}
 
+	// nested lists: tight, with Obsidian's ● ○ ■ bullets
+	.note-body {
+		li > ul,
+		li > ol {
+			margin-bottom: 0;
+		}
+
+		ul ul {
+			list-style: circle;
+		}
+
+		ul ul ul {
+			list-style: square;
+		}
+	}
+
 	.note-backlinks {
 		border-top: solid 1px _palette(border);
 		margin-top: _size(element-margin);

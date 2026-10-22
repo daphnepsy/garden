@@ -34,10 +34,7 @@ defaults:
       layout: note
 
 # build settings
-markdown: kramdown
-kramdown:
-  input: GFM
-  hard_wrap: true # a line break in a note is a line break on the page, like in Obsidian
+markdown: Garden # CommonMark, like Obsidian (see _plugins/markdown.rb)
 plugins:
   - jekyll-seo-tag
 sass:

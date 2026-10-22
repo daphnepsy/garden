@@ -9,10 +9,8 @@
 # /some-folder/my-note, and gets `folder: "Some Folder"` for the garden index.
 #
 # `added` and `updated` dates are read as dates even when quoted, so the
-# garden can sort by them. It also gives every note a `backlinks` list (the notes that link to it), and
-# lets a list, heading or quote start right under a line of text, as Obsidian
-# does (the site's Markdown otherwise needs a blank line before them). Tables
-# with only a header row (like a row of photos) are tables too, as in Obsidian.
+# garden can sort by them. It also gives every note a `backlinks` list (the
+# notes that link to it). The Markdown itself is rendered by _plugins/markdown.rb.
 # Links are matched on file name (or folder/name), case-insensitively, like Obsidian does.
 
 module Garden
@@ -42,51 +40,6 @@ module Garden
   def self.rewrite(markdown)
     markdown.split(CODE).each_with_index.map do |part, i|
       i.odd? ? part : part.gsub(WIKILINK) { yield Regexp.last_match(1) == "!", Regexp.last_match(2) }
-    end.join
-  end
-
-  LIST_ITEM = /\A\s*([-*+]|\d+[.)])\s/
-  HEADING = /\A#+\s/
-  QUOTE = /\A\s*>/
-  FENCE = /\A\s*(```|~~~)/
-
-  def self.needs_gap?(line, prev)
-    return false if prev.strip.empty?
-    return true if line.match?(HEADING)
-    return !prev.match?(QUOTE) if line.match?(QUOTE)
-    return !prev.match?(LIST_ITEM) && !prev.start_with?(" ", "\t") if line.match?(LIST_ITEM)
-    false
-  end
-
-  # Adds a blank line between a line of text and a block that starts under it
-  def self.separate_blocks(markdown)
-    in_code = false
-    prev = ""
-    markdown.lines.map do |line|
-      gap = !in_code && needs_gap?(line, prev)
-      in_code = !in_code if line.match?(FENCE)
-      prev = line
-      gap ? "\n#{line}" : line
-    end.join
-  end
-
-  TABLE_DIVIDER = /\A\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*\z/
-  EMPTY_ROW_MARK = "GARDEN-EMPTY-ROW"
-
-  # kramdown only sees a table when it has a row under the | --- | divider, so
-  # a header-only table gets a placeholder row, which is removed after rendering
-  def self.complete_tables(markdown)
-    lines = markdown.lines
-    in_code = false
-    lines.each_with_index.flat_map do |line, i|
-      in_code = !in_code if line.match?(FENCE)
-      next_line = lines[i + 1].to_s
-      header_only = !in_code && line.include?("|") && line.match?(TABLE_DIVIDER) && i.positive? &&
-        lines[i - 1].include?("|") && !next_line.include?("|")
-      next [line] unless header_only
-
-      columns = line.strip.delete_prefix("|").delete_suffix("|").split("|").size
-      [line.end_with?("\n") ? line : "#{line}\n", "|#{" #{EMPTY_ROW_MARK} |" * columns}\n"]
     end.join
   end
 
@@ -133,7 +86,7 @@ module Garden
     notes = notes_by_name(site)
     baseurl = site.config["baseurl"].to_s
 
-    doc.content = rewrite(complete_tables(separate_blocks(doc.content))) do |embed, inner|
+    doc.content = rewrite(doc.content) do |embed, inner|
       name, heading, label = parse(inner)
       ext = File.extname(name).delete(".").downcase
 
@@ -146,9 +99,5 @@ module Garden
         %(<span class="internal-link unplanted" title="Not planted yet">#{label || name}</span>)
       end
     end
-  end
-
-  Jekyll::Hooks.register :notes, :post_render do |doc|
-    doc.output = doc.output.gsub(%r!\s*<tbody>\s*<tr>\s*(<td>#{EMPTY_ROW_MARK}</td>\s*)+</tr>\s*</tbody>!, "")
   end
 end

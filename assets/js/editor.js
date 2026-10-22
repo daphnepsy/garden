@@ -108,6 +108,12 @@
 			throw new Error('unauthorized');
 		}
 		const data = res.status === 204 ? null : await res.json().catch(() => null);
+		if (res.status === 403 && /not accessible/i.test((data && data.message) || '')) {
+			// the token can read the (public) repo but isn't allowed to change it
+			const error = new Error('your token can’t change ' + repo + '. On GitHub, edit the token: set Repository access to “Only select repositories” → ' + repo + ', and Repository permissions → Contents to “Read and write”. Then save again.');
+			error.status = 403;
+			throw error;
+		}
 		if (!res.ok) {
 			const error = new Error((data && data.message) || 'GitHub error ' + res.status);
 			error.status = res.status;

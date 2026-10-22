@@ -4,7 +4,9 @@
 #   ![[photo.png]]                               -> image from assets/garden/
 #   [[Note that doesn't exist]]                  -> plain text, styled as "unplanted"
 #
-# It also gives every note a `backlinks` list (the notes that link to it).
+# It also gives every note a `backlinks` list (the notes that link to it), and
+# lets a list, heading or quote start right under a line of text, as Obsidian
+# does (the site's Markdown otherwise needs a blank line before them).
 # Links are matched on file name, case-insensitively, like Obsidian does.
 
 module Garden
@@ -25,6 +27,31 @@ module Garden
   def self.rewrite(markdown)
     markdown.split(CODE).each_with_index.map do |part, i|
       i.odd? ? part : part.gsub(WIKILINK) { yield Regexp.last_match(1) == "!", Regexp.last_match(2) }
+    end.join
+  end
+
+  LIST_ITEM = /\A\s*([-*+]|\d+[.)])\s/
+  HEADING = /\A#+\s/
+  QUOTE = /\A\s*>/
+  FENCE = /\A\s*(```|~~~)/
+
+  def self.needs_gap?(line, prev)
+    return false if prev.strip.empty?
+    return true if line.match?(HEADING)
+    return !prev.match?(QUOTE) if line.match?(QUOTE)
+    return !prev.match?(LIST_ITEM) && !prev.start_with?(" ", "\t") if line.match?(LIST_ITEM)
+    false
+  end
+
+  # Adds a blank line between a line of text and a block that starts under it
+  def self.separate_blocks(markdown)
+    in_code = false
+    prev = ""
+    markdown.lines.map do |line|
+      gap = !in_code && needs_gap?(line, prev)
+      in_code = !in_code if line.match?(FENCE)
+      prev = line
+      gap ? "\n#{line}" : line
     end.join
   end
 
@@ -57,7 +84,7 @@ module Garden
     notes = notes_by_name(site)
     baseurl = site.config["baseurl"].to_s
 
-    doc.content = rewrite(doc.content) do |embed, inner|
+    doc.content = rewrite(separate_blocks(doc.content)) do |embed, inner|
       name, heading, label = parse(inner)
       ext = File.extname(name).delete(".").downcase
 

@@ -35,6 +35,9 @@ defaults:
 
 # build settings
 markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: true # a line break in a note is a line break on the page, like in Obsidian
 plugins:
   - jekyll-seo-tag
 sass:

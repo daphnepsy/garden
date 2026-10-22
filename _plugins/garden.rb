@@ -1,14 +1,18 @@
 # Makes Obsidian-flavoured notes in _notes/ work on the site:
 #
-#   [[Note]]  [[Note|label]]  [[Note#Heading]]   -> links to /<note>
+#   [[Note]]  [[Note|label]]  [[Note#Heading]]   -> links to the note
+#   [[Folder/Note]]                              -> same, when names clash
 #   ![[photo.png]]                               -> image from assets/garden/
 #   [[Note that doesn't exist]]                  -> plain text, styled as "unplanted"
+#
+# Notes can live in folders: _notes/Some Folder/My Note.md is served at
+# /some-folder/my-note, and gets `folder: "Some Folder"` for the garden index.
 #
 # `added` and `updated` dates are read as dates even when quoted, so the
 # garden can sort by them. It also gives every note a `backlinks` list (the notes that link to it), and
 # lets a list, heading or quote start right under a line of text, as Obsidian
 # does (the site's Markdown otherwise needs a blank line before them).
-# Links are matched on file name, case-insensitively, like Obsidian does.
+# Links are matched on file name (or folder/name), case-insensitively, like Obsidian does.
 
 module Garden
   WIKILINK = /(!?)\[\[([^\[\]]+?)\]\]/
@@ -20,8 +24,17 @@ module Garden
     name.strip.downcase
   end
 
+  # "Some Folder/My Note" for _notes/Some Folder/My Note.md
+  def self.note_path(doc)
+    doc.relative_path.sub(%r!\A_notes/!, "").sub(%r!\.md\z!, "")
+  end
+
+  # Both "my note" and "some folder/my note" find the note
   def self.notes_by_name(site)
-    site.collections["notes"].docs.to_h { |doc| [key(doc.basename_without_ext), doc] }
+    site.collections["notes"].docs.each_with_object({}) do |doc, by_name|
+      by_name[key(doc.basename_without_ext)] ||= doc
+      by_name[key(note_path(doc))] = doc
+    end
   end
 
   # Calls the block with each wikilink outside code, replacing it with the result
@@ -73,12 +86,16 @@ module Garden
 
   Jekyll::Hooks.register :site, :post_read do |site|
     notes = notes_by_name(site)
-    notes.each_value do |doc|
+    docs = site.collections["notes"].docs
+    docs.each do |doc|
+      parts = note_path(doc).split("/")
+      doc.data["folder"] = parts[0..-2].join("/")
+      doc.data["permalink"] = "/" + parts.map { |part| Jekyll::Utils.slugify(part) }.join("/")
       doc.data["backlinks"] = []
       %w[added updated].each { |field| doc.data[field] = to_date(doc.data[field]) }
     end
 
-    notes.each_value do |doc|
+    docs.each do |doc|
       linked = []
       rewrite(doc.content) do |_embed, inner|
         linked << notes[key(parse(inner)[0])]

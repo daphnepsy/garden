@@ -8,6 +8,7 @@ updated: 2026-11-09
 ## Resources
 - [Wikipedia](https://en.wikipedia.org/wiki/8th_Street_and_St._Mark%27s_Place)
 - [St. Marks Is Dead](https://en.wikipedia.org/wiki/St._Marks_Is_Dead)
+- [PDF version](https://www.dropbox.com/scl/fi/h7pu426h0994yiovtzyus/NYC-History.pdf?rlkey=0l3hsv3wyy8rxfasnbaxzpave&st=c9kjl241&dl=0)
 
 ---
 
@@ -25,7 +26,7 @@ updated: 2026-11-09
 - [New Amsterdam](https://en.wikipedia.org/wiki/New_Amsterdam#/media/File:New_York_City_-_Manhattan_-_Lower_Manhattan_(cropped).PNG) was only the Southern tip of Manhattan
 - **1660**: built a Dutch Reformed family chapel at what's now **10th Street & 2nd Avenue**, so the family could skip the long Sunday trip to church at the island's tip. This is the site of today's **St. Mark's Church in-the-Bowery**.
 - **1664**: the poorly defended Dutch colony was seized by the English. New Amsterdam was renamed **New York** after the Duke of York (later James II & VII).
-- Died in **1672** and is buried in a vault under the chapel. Banned English from being spoken in his house.
+- Died in **1672** and is buried in a vault under the chapel. Hated the English and banned English from being spoken in his house.
 
 ---
 

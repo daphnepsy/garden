@@ -1,7 +1,7 @@
 ---
-title: "Museum Notes"
+title: "Museums"
 added: 2026-10-22
-updated: 2026-10-22
+updated: 2026-11-09
 ---
 
 ## National Museum of Anthropology (CDMX)

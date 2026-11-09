@@ -12,7 +12,7 @@ updated: 2026-11-09
 
 ---
 
-## Dutch New Amsterdam (1640s–1664)
+## Dutch New Amsterdam (1640–1664)
 
 - Before Peter Stuyvesant came Director General Willem Kieft
 - Kieft started brutal wars with native Americans
@@ -42,7 +42,7 @@ updated: 2026-11-09
 
 ---
 
-## Little Germany / Kleindeutschland (1840s–1904)
+## Little Germany / Kleindeutschland (1840–1904)
 
 ### Growth
 - **By 1845**: already the largest German-American neighborhood in New York

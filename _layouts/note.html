@@ -1,35 +1,45 @@
 ---
-layout: default
+layout: desktop
 ---
-<!-- Main -->
-<div id="main" class="alt">
-
-	<!-- One -->
-	<section id="one">
-		<div class="inner">
-			<p class="note-back"><a href="{{ '/' | relative_url }}">&larr; Garden</a>{% if page.folder and page.folder != '' %} / <a href="{{ '/' | relative_url }}#{{ page.folder | slugify }}">{{ page.folder | replace: '/', ' / ' }}</a>{% endif %}</p>
-			<header class="major">
-				<h1>{{ page.title }}</h1>
+{% comment %}
+	A note, open as a document window on the garden's desktop. The editor's
+	preview (/editor/preview/) uses this layout too and fills in the parts
+	marked note-*, so keep those class names.
+{% endcomment %}
+{% if page.folder and page.folder != '' %}{% capture back %}{{ '/' | relative_url }}#{{ page.folder | slugify }}{% endcapture %}{% else %}{% assign back = '/' | relative_url %}{% endif %}
+	<div class="desktop single">
+		<article class="window doc">
+			<header class="titlebar">
+				<span class="title"><svg aria-hidden="true"><use href="#icon-note" /></svg><span class="note-window-title">{{ page.title }}</span></span>
+				<span class="controls"><i aria-hidden="true">_</i><i aria-hidden="true">&#9633;</i><a href="{{ back }}" aria-label="Close" title="Close">&times;</a></span>
 			</header>
-			<p class="note-meta">
-				{% if page.added %}<span>Added {{ page.added | date: '%b %-d, %Y' }}</span>{% endif %}
-				{% if page.updated %}<span>Updated {{ page.updated | date: '%b %-d, %Y' }}</span>{% endif %}
-			</p>
-			<div class="project-body note-body">
-				{{ content }}
+
+			<nav class="toolbar">
+				<p class="note-back"><a href="{{ '/' | relative_url }}">&larr; Garden</a>{% if page.folder and page.folder != '' %} / <a href="{{ back }}">{{ page.folder | replace: '/', ' / ' }}</a>{% endif %}</p>
+			</nav>
+
+			<div class="doc-body">
+				<header class="major">
+					<h1>{{ page.title }}</h1>
+				</header>
+				<p class="note-meta">
+					{% if page.added %}<span>Added {{ page.added | date: '%b %-d, %Y' }}</span>{% endif %}
+					{% if page.updated %}<span>Updated {{ page.updated | date: '%b %-d, %Y' }}</span>{% endif %}
+				</p>
+				<div class="note-body">
+					{{ content }}
+				</div>
+
+				{% if page.backlinks.size > 0 %}
+				<aside class="note-backlinks">
+					<h2>Links to this note</h2>
+					<ul>
+						{% for note in page.backlinks %}
+						<li><a href="{{ note.url | relative_url }}"><svg aria-hidden="true"><use href="#icon-note" /></svg>{{ note.title }}</a></li>
+						{% endfor %}
+					</ul>
+				</aside>
+				{% endif %}
 			</div>
-
-			{% if page.backlinks.size > 0 %}
-			<aside class="note-backlinks">
-				<h4>Links to this note</h4>
-				<ul>
-					{% for note in page.backlinks %}
-					<li><a href="{{ note.url | relative_url }}">{{ note.title }}</a></li>
-					{% endfor %}
-				</ul>
-			</aside>
-			{% endif %}
-		</div>
-	</section>
-
-</div>
+		</article>
+	</div>

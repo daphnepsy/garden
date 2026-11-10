@@ -1,52 +1,13 @@
 ---
 title: daphne's digital garden
-layout: null
+layout: desktop
 ---
-<!DOCTYPE html>
-<!--
-	The garden as a Finder-style window, drawn as 90s pastel software. Each folder is its own view, shown
+{% comment %}
+	The garden as a Finder-style window. Each folder is its own view, shown
 	when the address ends in #its-id (the garden itself shows with no #), so
 	folders open with plain links and the browser's back button works. The
 	folder tree comes from _plugins/garden.rb.
--->
-<html lang="en">
-<head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	{% seo %}
-	<link rel="icon" type="image/svg+xml" href="{{ '/assets/images/favicon.svg' | relative_url }}" />
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap" />
-	<link rel="stylesheet" href="{{ '/assets/css/font-awesome.min.css' | relative_url }}" />
-	<link rel="stylesheet" href="{{ '/assets/css/finder.css' | relative_url }}" />
-</head>
-<body>
-
-	<svg width="0" height="0" class="defs" aria-hidden="true">
-		<defs>
-			<symbol id="icon-folder" viewBox="0 0 64 52">
-				<path d="M3 9a4 4 0 0 1 4-4h14l5 5h31a4 4 0 0 1 4 4v31a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z" fill="var(--folder-back)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round" />
-				<path d="M3 18h58v27a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z" fill="var(--folder)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round" />
-			</symbol>
-			<symbol id="icon-note" viewBox="0 0 48 60">
-				<path d="M5 2.5h26l14.5 14.5V55a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 55V5A2.5 2.5 0 0 1 5 2.5z" fill="var(--paper)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round" />
-				<path d="M31 2.5V17h14.5" fill="var(--accent-3)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round" />
-				<path d="M10 27h26M10 34h26M10 41h17" stroke="var(--accent-1)" stroke-width="3" stroke-linecap="round" />
-			</symbol>
-			<symbol id="icon-sparkle" viewBox="0 0 24 24">
-				<path d="M12 1c.9 5.6 4.4 9.1 11 11-6.6 1.9-10.1 5.4-11 11-.9-5.6-4.4-9.1-11-11 6.6-1.9 10.1-5.4 11-11z" />
-			</symbol>
-		</defs>
-	</svg>
-
-	<div class="sparkles" aria-hidden="true">
-		<svg style="--x: 6%; --y: 12%; --s: 28px"><use href="#icon-sparkle" /></svg>
-		<svg style="--x: 88%; --y: 8%; --s: 22px"><use href="#icon-sparkle" /></svg>
-		<svg style="--x: 93%; --y: 62%; --s: 34px"><use href="#icon-sparkle" /></svg>
-		<svg style="--x: 3%; --y: 70%; --s: 18px"><use href="#icon-sparkle" /></svg>
-		<svg style="--x: 46%; --y: 3%; --s: 16px"><use href="#icon-sparkle" /></svg>
-		<svg style="--x: 70%; --y: 90%; --s: 20px"><use href="#icon-sparkle" /></svg>
-	</div>
-
+{% endcomment %}
 	<div class="desktop">
 
 		<aside class="window hello">
@@ -128,16 +89,6 @@ layout: null
 
 	</div>
 
-	<nav class="taskbar" aria-label="Elsewhere">
-		<a class="start" href="{{ '/' | relative_url }}"><svg aria-hidden="true"><use href="#icon-sparkle" /></svg>garden</a>
-		<span class="links">
-			<a href="mailto:{{ site.email }}" title="Email"><i class="fa fa-envelope" aria-hidden="true"></i><span class="label">Email</span></a>
-			{% for link in site.social %}
-			<a href="{{ link.url }}" title="{{ link.name }}"><i class="fa {{ link.icon }}" aria-hidden="true"></i><span class="label">{{ link.name }}</span></a>
-			{% endfor %}
-		</span>
-	</nav>
-
 	<script>
 		// remember icon or list view on this device
 		(function () {
@@ -152,5 +103,3 @@ layout: null
 			} catch (e) { /* storage unavailable: start in icon view */ }
 		})();
 	</script>
-</body>
-</html>

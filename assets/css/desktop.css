@@ -1,5 +1,7 @@
-/* The garden homepage (index.html): a Finder-style window drawn as 90s pastel
-   software. Change the look from the colors here. */
+/* The garden's desktop (_layouts/desktop.html): the homepage's Finder-style
+   window (index.html) and the note pages' document windows
+   (_layouts/note.html), drawn as 90s pastel software. Change the look from the
+   colors here. */
 
 :root {
 	--desk-top: #b9a6f5;     /* lavender sky */
@@ -9,6 +11,7 @@
 	--accent-1: #ff8cc6;     /* pink: garden title bar, selection */
 	--accent-2: #8ce3d4;     /* mint: folder title bars */
 	--accent-3: #ffe07a;     /* butter yellow: hello.txt, folded corners */
+	--accent-4: #cbb8ff;     /* lilac: note windows */
 	--folder: #ffd166;
 	--folder-back: #f5b83d;
 	--stripe: #f4eefc;       /* list view zebra rows */
@@ -126,7 +129,8 @@ a {
 	gap: 0.3rem;
 }
 
-.controls i {
+.controls i,
+.controls a {
 	background: var(--paper);
 	border: 2px solid var(--ink);
 	border-radius: 3px;
@@ -135,7 +139,12 @@ a {
 	font-style: normal;
 	height: 20px;
 	place-items: center;
+	text-decoration: none;
 	width: 20px;
+}
+
+.controls a:hover {
+	background: var(--accent-1);
 }
 
 /* hello.txt */
@@ -459,6 +468,282 @@ label.button:active {
 	flex: none;
 }
 
+/* ---------- a note: one document window ---------- */
+
+.desktop.single {
+	display: block;
+	max-width: 900px;
+}
+
+.doc .titlebar {
+	background: var(--accent-4);
+}
+
+.doc .title svg {
+	height: 20px;
+	width: 16px;
+}
+
+.note-back {
+	font: 20px/1 var(--pixel);
+	margin: 0;
+}
+
+.note-back a {
+	text-decoration: none;
+}
+
+.note-back a:hover {
+	text-decoration: underline;
+}
+
+.doc-body {
+	padding: 2rem 2.5rem 2.5rem;
+}
+
+.doc h1 {
+	font: 52px/1 var(--pixel);
+	margin: 0 0 0.4rem;
+}
+
+.note-meta {
+	font: 18px/1.2 var(--pixel);
+	margin: 0 0 2rem;
+	opacity: 0.75;
+}
+
+.note-meta span + span::before {
+	content: '\2726';
+	margin: 0 0.5rem;
+}
+
+/* the note itself */
+
+.note-body {
+	font-size: 15px;
+	line-height: 1.75;
+	max-width: 70ch;
+	overflow-wrap: break-word;
+}
+
+.note-body > :first-child {
+	margin-top: 0;
+}
+
+.note-body p,
+.note-body ul,
+.note-body ol,
+.note-body blockquote,
+.note-body pre,
+.note-body table {
+	margin: 0 0 1.25rem;
+}
+
+.note-body h1,
+.note-body h2,
+.note-body h3,
+.note-body h4,
+.note-body h5,
+.note-body h6 {
+	font-family: var(--pixel);
+	font-weight: normal;
+	line-height: 1.1;
+	margin: 2rem 0 0.75rem;
+}
+
+.note-body h1 { font-size: 40px; }
+.note-body h2 { font-size: 34px; }
+.note-body h3 { font-size: 28px; }
+.note-body h4,
+.note-body h5,
+.note-body h6 { font-size: 23px; }
+
+.note-body a,
+.note-backlinks a {
+	background: linear-gradient(transparent 62%, var(--accent-1) 62%);
+	text-decoration: none;
+}
+
+.note-body a:hover,
+.note-backlinks a:hover {
+	background: var(--accent-1);
+}
+
+/* a [[link]] to a note that isn't written yet */
+.note-body .unplanted {
+	cursor: help;
+	opacity: 0.55;
+}
+
+.note-body strong {
+	font-weight: 700;
+}
+
+/* lists: Obsidian's bullets, tight when nested */
+.note-body ul,
+.note-body ol {
+	padding-left: 1.5rem;
+}
+
+.note-body li > ul,
+.note-body li > ol {
+	margin-bottom: 0;
+}
+
+.note-body ul ul {
+	list-style: circle;
+}
+
+.note-body ul ul ul {
+	list-style: square;
+}
+
+.note-body li::marker {
+	color: var(--accent-1);
+}
+
+.note-body ol > li::marker {
+	color: var(--ink);
+	font-weight: 700;
+}
+
+.note-body input[type="checkbox"] {
+	accent-color: var(--accent-1);
+	margin: 0 0.3rem 0 0;
+	transform: translateY(1px);
+}
+
+.note-body blockquote {
+	background: var(--stripe);
+	border-left: 4px solid var(--accent-1);
+	border-radius: 0 6px 6px 0;
+	font-style: italic;
+	padding: 0.75rem 1rem;
+}
+
+.note-body blockquote > :last-child {
+	margin-bottom: 0;
+}
+
+.note-body code {
+	background: var(--stripe);
+	border: 2px solid var(--ink);
+	border-radius: 4px;
+	font-family: var(--mono);
+	font-size: 0.88em;
+	padding: 0 0.3em;
+}
+
+.note-body pre {
+	background: var(--ink);
+	border-radius: 6px;
+	box-shadow: 4px 4px 0 var(--accent-1);
+	color: var(--paper);
+	overflow-x: auto;
+	padding: 1rem 1.1rem;
+}
+
+.note-body pre code {
+	background: none;
+	border: 0;
+	font-size: 13px;
+	padding: 0;
+}
+
+.note-body hr {
+	border: 0;
+	border-top: 3px dashed var(--ink);
+	margin: 2rem 0;
+}
+
+.note-body img {
+	border: 3px solid var(--ink);
+	border-radius: 6px;
+	box-shadow: 4px 4px 0 var(--ink);
+	height: auto;
+	max-width: 100%;
+	vertical-align: middle;
+}
+
+/* tables, including a row of photos */
+.note-body table {
+	border: 3px solid var(--ink);
+	border-collapse: separate;
+	border-radius: 6px;
+	border-spacing: 0;
+	max-width: 100%;
+}
+
+/* photos in a table share the width evenly */
+.note-body table:has(img) {
+	table-layout: fixed;
+	width: 100%;
+}
+
+.note-body th,
+.note-body td {
+	border-bottom: 2px solid var(--ink);
+	padding: 0.4rem 0.75rem;
+	text-align: left;
+	vertical-align: top;
+}
+
+.note-body th + th,
+.note-body td + td {
+	border-left: 2px solid var(--ink);
+}
+
+.note-body tr:last-child > * {
+	border-bottom: 0;
+}
+
+.note-body thead th {
+	background: var(--accent-2);
+}
+
+.note-body thead:only-child th {
+	background: none;
+}
+
+.note-body td img,
+.note-body th img {
+	border-width: 2px;
+	box-shadow: none;
+}
+
+/* links to this note */
+
+.note-backlinks {
+	border-top: 3px dashed var(--ink);
+	margin-top: 2.5rem;
+	padding-top: 1.5rem;
+}
+
+.note-backlinks h2 {
+	font: 26px/1 var(--pixel);
+	margin: 0 0 0.75rem;
+}
+
+.note-backlinks ul {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.25rem;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.note-backlinks a {
+	align-items: center;
+	display: inline-flex;
+	gap: 0.4rem;
+}
+
+.note-backlinks svg {
+	height: 18px;
+	width: 14px;
+}
+
 /* ---------- taskbar ---------- */
 
 .taskbar {
@@ -560,6 +845,14 @@ label.button:active {
 	#view-list:checked ~ .view .item .kind,
 	#view-list:checked ~ .view .columns span:last-child {
 		display: none;
+	}
+
+	.doc-body {
+		padding: 1.5rem 1.1rem 2rem;
+	}
+
+	.doc h1 {
+		font-size: 42px;
 	}
 
 	.taskbar .links a {

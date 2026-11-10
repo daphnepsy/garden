@@ -338,7 +338,9 @@
 		const doc = el.preview.contentDocument;
 		if (!previewReady || !doc || !current) return;
 
-		doc.querySelector('header.major h1').textContent = el.title.value.trim() || 'Untitled';
+		doc.querySelectorAll('header.major h1, .note-window-title').forEach((title) => {
+			title.textContent = el.title.value.trim() || 'Untitled';
+		});
 
 		// "← Garden / Folder", as on the site
 		const back = doc.querySelector('.note-back');

@@ -1,24 +1,156 @@
 ---
 title: daphne's digital garden
-layout: landing
+layout: null
 ---
+<!DOCTYPE html>
+<!--
+	The garden as a Finder-style window, drawn as 90s pastel software. Each folder is its own view, shown
+	when the address ends in #its-id (the garden itself shows with no #), so
+	folders open with plain links and the browser's back button works. The
+	folder tree comes from _plugins/garden.rb.
+-->
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	{% seo %}
+	<link rel="icon" type="image/svg+xml" href="{{ '/assets/images/favicon.svg' | relative_url }}" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap" />
+	<link rel="stylesheet" href="{{ '/assets/css/font-awesome.min.css' | relative_url }}" />
+	<link rel="stylesheet" href="{{ '/assets/css/finder.css' | relative_url }}" />
+</head>
+<body>
 
-{% assign notes = site.notes | sort: 'updated', 'first' | reverse %}
-{% assign folders = notes | group_by: 'folder' | sort: 'name' %}
-<p class="garden-intro">a small collection of my notes and thoughts. inspired by the gardens of <a href="https://garden.carolynyoo.com/">many</a> <a href="https://nesslabs.com/mind-garden">others</a>.</p>
+	<svg width="0" height="0" class="defs" aria-hidden="true">
+		<defs>
+			<symbol id="icon-folder" viewBox="0 0 64 52">
+				<path d="M3 9a4 4 0 0 1 4-4h14l5 5h31a4 4 0 0 1 4 4v31a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z" fill="var(--folder-back)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round" />
+				<path d="M3 18h58v27a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z" fill="var(--folder)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round" />
+			</symbol>
+			<symbol id="icon-note" viewBox="0 0 48 60">
+				<path d="M5 2.5h26l14.5 14.5V55a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 55V5A2.5 2.5 0 0 1 5 2.5z" fill="var(--paper)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round" />
+				<path d="M31 2.5V17h14.5" fill="var(--accent-3)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round" />
+				<path d="M10 27h26M10 34h26M10 41h17" stroke="var(--accent-1)" stroke-width="3" stroke-linecap="round" />
+			</symbol>
+			<symbol id="icon-sparkle" viewBox="0 0 24 24">
+				<path d="M12 1c.9 5.6 4.4 9.1 11 11-6.6 1.9-10.1 5.4-11 11-.9-5.6-4.4-9.1-11-11 6.6-1.9 10.1-5.4 11-11z" />
+			</symbol>
+		</defs>
+	</svg>
 
-{% if notes.size == 0 %}
-<p class="garden-empty">Nothing planted yet. Check back soon 🌱</p>
-{% else %}
-{% for folder in folders %}
-{% if folder.name != '' %}<h3 class="garden-folder" id="{{ folder.name | slugify }}">{{ folder.name | replace: '/', ' / ' }}</h3>{% endif %}
-<ul class="garden-list">
-	{% for note in folder.items %}
-	<li>
-		<a href="{{ note.url | relative_url }}">{{ note.title }}</a>
-		{% if note.updated %}<span class="note-date">{{ note.updated | date: '%b %Y' }}</span>{% endif %}
-	</li>
-	{% endfor %}
-</ul>
-{% endfor %}
-{% endif %}
+	<div class="sparkles" aria-hidden="true">
+		<svg style="--x: 6%; --y: 12%; --s: 28px"><use href="#icon-sparkle" /></svg>
+		<svg style="--x: 88%; --y: 8%; --s: 22px"><use href="#icon-sparkle" /></svg>
+		<svg style="--x: 93%; --y: 62%; --s: 34px"><use href="#icon-sparkle" /></svg>
+		<svg style="--x: 3%; --y: 70%; --s: 18px"><use href="#icon-sparkle" /></svg>
+		<svg style="--x: 46%; --y: 3%; --s: 16px"><use href="#icon-sparkle" /></svg>
+		<svg style="--x: 70%; --y: 90%; --s: 20px"><use href="#icon-sparkle" /></svg>
+	</div>
+
+	<div class="desktop">
+
+		<aside class="window hello">
+			<header class="titlebar">
+				<span class="title">hello.txt</span>
+				<span class="controls" aria-hidden="true"><i>_</i><i>&#9633;</i><i>&times;</i></span>
+			</header>
+			<div class="hello-body">
+				<h1>{{ page.title }}</h1>
+				<p>a small collection of my notes and thoughts. inspired by the gardens of <a href="https://garden.carolynyoo.com/">many</a> <a href="https://nesslabs.com/mind-garden">others</a>.</p>
+			</div>
+		</aside>
+
+		<main class="finder">
+			<!-- icon / list view switch, used by the buttons in every toolbar -->
+			<input type="radio" name="view" id="view-icons" class="view-switch" checked />
+			<input type="radio" name="view" id="view-list" class="view-switch" />
+
+			{% for folder in site.data.garden_folders %}
+			{% if folder.path == '' %}{% assign root = true %}{% else %}{% assign root = false %}{% endif %}
+			{% assign count = folder.folders.size | plus: folder.notes.size %}
+			<section class="window view{% if root %} root{% endif %}"{% unless root %} id="{{ folder.id }}"{% endunless %} aria-label="{{ folder.name }}">
+				<header class="chrome">
+					<div class="titlebar">
+						<span class="title"><svg aria-hidden="true"><use href="#icon-folder" /></svg>{{ folder.name }}</span>
+						<span class="controls" aria-hidden="true"><i>_</i><i>&#9633;</i><i>&times;</i></span>
+					</div>
+					<div class="toolbar">
+						<span class="buttons">
+							{% if root %}
+							<span class="button disabled" aria-hidden="true">&lsaquo;</span>
+							{% else %}
+							<a class="button" href="#{{ folder.parent.id }}" title="Back to {{ folder.parent.name }}" aria-label="Back to {{ folder.parent.name }}">&lsaquo;</a>
+							{% endif %}
+							<span class="button disabled" aria-hidden="true">&rsaquo;</span>
+						</span>
+						<span class="buttons" role="group" aria-label="View">
+							<label class="button icons" for="view-icons" title="View as icons"><i class="fa fa-th-large" aria-hidden="true"></i><span class="label">Icons</span></label>
+							<label class="button list" for="view-list" title="View as list"><i class="fa fa-list" aria-hidden="true"></i><span class="label">List</span></label>
+						</span>
+					</div>
+				</header>
+
+				<div class="content">
+					<div class="columns" aria-hidden="true"><span>Name</span><span>Date Modified</span><span>Kind</span></div>
+					<ul class="items">
+						{% for sub in folder.folders %}
+						<li><a class="item" href="#{{ sub.id }}">
+							<svg class="icon" aria-hidden="true"><use href="#icon-folder" /></svg>
+							<span class="name">{{ sub.name }}</span>
+							<span class="date">{% if sub.updated %}{{ sub.updated | date: '%b %-d, %Y' }}{% else %}--{% endif %}</span>
+							<span class="kind">Folder</span>
+						</a></li>
+						{% endfor %}
+						{% for note in folder.notes %}
+						<li><a class="item note" href="{{ note.url | relative_url }}">
+							<svg class="icon" aria-hidden="true"><use href="#icon-note" /></svg>
+							<span class="name">{{ note.title }}</span>
+							<span class="date">{% if note.updated %}{{ note.updated | date: '%b %-d, %Y' }}{% else %}--{% endif %}</span>
+							<span class="kind">Note</span>
+						</a></li>
+						{% endfor %}
+					</ul>
+					{% if count == 0 %}<p class="empty">Nothing planted yet. Check back soon 🌱</p>{% endif %}
+				</div>
+
+				<footer class="pathbar">
+					<span class="trail">
+						{% for step in folder.trail %}
+						{% unless forloop.first %}<span class="sep" aria-hidden="true">&rsaquo;</span>{% endunless %}
+						<a href="#{{ step.id }}"><svg aria-hidden="true"><use href="#icon-folder" /></svg>{{ step.name }}</a>
+						{% endfor %}
+					</span>
+					<span class="count">{{ count }} item{% if count != 1 %}s{% endif %}</span>
+				</footer>
+			</section>
+			{% endfor %}
+		</main>
+
+	</div>
+
+	<nav class="taskbar" aria-label="Elsewhere">
+		<a class="start" href="{{ '/' | relative_url }}"><svg aria-hidden="true"><use href="#icon-sparkle" /></svg>garden</a>
+		<span class="links">
+			<a href="mailto:{{ site.email }}" title="Email"><i class="fa fa-envelope" aria-hidden="true"></i><span class="label">Email</span></a>
+			{% for link in site.social %}
+			<a href="{{ link.url }}" title="{{ link.name }}"><i class="fa {{ link.icon }}" aria-hidden="true"></i><span class="label">{{ link.name }}</span></a>
+			{% endfor %}
+		</span>
+	</nav>
+
+	<script>
+		// remember icon or list view on this device
+		(function () {
+			try {
+				var saved = localStorage.getItem('garden-view');
+				if (saved === 'list') document.getElementById('view-list').checked = true;
+				document.querySelectorAll('.view-switch').forEach(function (input) {
+					input.addEventListener('change', function () {
+						localStorage.setItem('garden-view', input.id === 'view-list' ? 'list' : 'icons');
+					});
+				});
+			} catch (e) { /* storage unavailable: start in icon view */ }
+		})();
+	</script>
+</body>
+</html>

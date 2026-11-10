@@ -1,0 +1,575 @@
+/* The garden homepage (index.html): a Finder-style window drawn as 90s pastel
+   software. Change the look from the colors here. */
+
+:root {
+	--desk-top: #b9a6f5;     /* lavender sky */
+	--desk-bottom: #f7b5d6;  /* pink horizon */
+	--ink: #2d1b55;          /* outlines, text, hard shadows */
+	--paper: #fffaf3;        /* window insides */
+	--accent-1: #ff8cc6;     /* pink: garden title bar, selection */
+	--accent-2: #8ce3d4;     /* mint: folder title bars */
+	--accent-3: #ffe07a;     /* butter yellow: hello.txt, folded corners */
+	--folder: #ffd166;
+	--folder-back: #f5b83d;
+	--stripe: #f4eefc;       /* list view zebra rows */
+	--shadow: 6px 6px 0 var(--ink);
+	--pixel: 'VT323', 'Courier New', monospace;
+	--mono: 'Space Mono', 'Courier New', monospace;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--desk-bottom);
+}
+
+body {
+	background:
+		radial-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1.5px) 0 0 / 18px 18px,
+		linear-gradient(var(--desk-top), var(--desk-bottom)) fixed;
+	color: var(--ink);
+	font: 14px/1.5 var(--mono);
+	margin: 0;
+	min-height: 100vh;
+	overflow-x: hidden;
+	padding-bottom: 4.5rem;
+}
+
+a {
+	color: inherit;
+}
+
+.defs {
+	position: absolute;
+}
+
+.sparkles {
+	inset: 0;
+	pointer-events: none;
+	position: fixed;
+}
+
+.sparkles svg {
+	fill: #fff;
+	height: var(--s);
+	left: var(--x);
+	opacity: 0.85;
+	pointer-events: none;
+	position: fixed;
+	top: var(--y);
+	width: var(--s);
+}
+
+.sparkles svg:nth-child(even) {
+	fill: var(--accent-3);
+}
+
+/* ---------- desktop ---------- */
+
+.desktop {
+	align-items: flex-start;
+	display: flex;
+	gap: 2.5rem;
+	justify-content: center;
+	margin: 0 auto;
+	max-width: 1180px;
+	padding: 3.5rem 1.5rem 2rem;
+	position: relative; /* above the sparkles */
+}
+
+/* ---------- windows ---------- */
+
+.window {
+	background: var(--paper);
+	border: 3px solid var(--ink);
+	border-radius: 8px;
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+
+.titlebar {
+	align-items: center;
+	background: var(--accent-2);
+	border-bottom: 3px solid var(--ink);
+	display: flex;
+	font: 22px/1 var(--pixel);
+	gap: 0.75rem;
+	justify-content: space-between;
+	padding: 0.3rem 0.5rem 0.3rem 0.75rem;
+}
+
+.root .titlebar {
+	background: var(--accent-1);
+}
+
+.title {
+	align-items: center;
+	display: flex;
+	gap: 0.45rem;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.title svg {
+	flex: none;
+	height: 18px;
+	width: 22px;
+}
+
+.controls {
+	display: flex;
+	flex: none;
+	gap: 0.3rem;
+}
+
+.controls i {
+	background: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 3px;
+	display: grid;
+	font: 18px/1 var(--pixel);
+	font-style: normal;
+	height: 20px;
+	place-items: center;
+	width: 20px;
+}
+
+/* hello.txt */
+
+.hello {
+	flex: 0 0 17rem;
+	margin-top: 2.5rem;
+	transform: rotate(-2deg);
+}
+
+.hello .titlebar {
+	background: var(--accent-3);
+}
+
+.hello-body {
+	padding: 1rem 1.1rem 1.2rem;
+}
+
+.hello h1 {
+	font: 34px/1 var(--pixel);
+	margin: 0 0 0.6rem;
+}
+
+.hello p {
+	margin: 0;
+}
+
+.hello a {
+	background: linear-gradient(transparent 60%, var(--accent-1) 60%);
+	text-decoration: none;
+}
+
+/* ---------- the garden window: one view per folder ---------- */
+
+.finder {
+	flex: 0 1 820px;
+	min-width: 0;
+}
+
+.view-switch {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* the garden shows by default; a folder shows when the address is #its-id */
+.view {
+	display: none;
+	flex-direction: column;
+	height: min(560px, calc(100vh - 9rem));
+	min-height: 360px;
+}
+
+.view.root,
+.view:target {
+	display: flex;
+}
+
+.finder:has(.view:target) .view.root {
+	display: none;
+}
+
+.toolbar {
+	align-items: center;
+	background: var(--stripe);
+	border-bottom: 3px solid var(--ink);
+	display: flex;
+	gap: 0.75rem;
+	padding: 0.5rem 0.75rem;
+}
+
+.buttons {
+	display: flex;
+}
+
+.button {
+	align-items: center;
+	background: var(--paper);
+	border: 2px solid var(--ink);
+	box-shadow: 2px 2px 0 var(--ink);
+	cursor: pointer;
+	display: inline-flex;
+	font: 24px/1 var(--pixel);
+	height: 30px;
+	justify-content: center;
+	min-width: 36px;
+	padding: 0 0.5rem;
+	text-decoration: none;
+}
+
+.button + .button {
+	border-left-width: 0;
+}
+
+.button:first-child {
+	border-radius: 5px 0 0 5px;
+}
+
+.button:last-child {
+	border-radius: 0 5px 5px 0;
+}
+
+a.button:hover,
+label.button:hover {
+	background: var(--accent-3);
+}
+
+a.button:active,
+label.button:active {
+	box-shadow: none;
+	transform: translate(2px, 2px);
+}
+
+.button.disabled {
+	color: rgba(45, 27, 85, 0.3);
+	cursor: default;
+}
+
+.button i {
+	font-size: 14px;
+}
+
+.label {
+	clip: rect(0 0 0 0);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	width: 1px;
+}
+
+#view-icons:checked ~ .view .button.icons,
+#view-list:checked ~ .view .button.list {
+	background: var(--accent-1);
+}
+
+.view-switch:focus-visible ~ .view .buttons[role="group"] {
+	outline: 3px dashed var(--ink);
+	outline-offset: 3px;
+}
+
+.content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1.25rem 1rem;
+}
+
+.columns {
+	display: none;
+}
+
+.items {
+	display: grid;
+	gap: 0.75rem 0.5rem;
+	grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.item {
+	align-items: center;
+	border-radius: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	padding: 0.5rem 0.25rem;
+	text-align: center;
+	text-decoration: none;
+}
+
+.item .icon {
+	height: 54px;
+	transition: transform 0.12s;
+	width: 64px;
+}
+
+.item.note .icon {
+	height: 60px;
+	width: 48px;
+}
+
+.item .name {
+	border-radius: 4px;
+	display: -webkit-box;
+	font-size: 13px;
+	line-height: 1.3;
+	overflow: hidden;
+	padding: 0 0.35rem;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	word-break: break-word;
+}
+
+.item .date,
+.item .kind {
+	display: none;
+}
+
+.item:hover .icon {
+	transform: translateY(-3px) rotate(-3deg);
+}
+
+.item:hover .name,
+.item:focus-visible .name {
+	background: var(--accent-1);
+}
+
+.item:focus-visible {
+	outline: 3px dashed var(--ink);
+	outline-offset: -3px;
+}
+
+.empty {
+	font: 24px/1.2 var(--pixel);
+	margin: 2rem 0;
+	text-align: center;
+}
+
+/* list view */
+
+#view-list:checked ~ .view .content {
+	padding: 0;
+}
+
+#view-list:checked ~ .view .columns,
+#view-list:checked ~ .view .item {
+	display: grid;
+	gap: 0.75rem;
+	grid-template-columns: minmax(0, 1fr) 9rem 4.5rem;
+	text-align: left;
+}
+
+#view-list:checked ~ .view .columns {
+	background: var(--paper);
+	border-bottom: 2px solid var(--ink);
+	font: 18px/1 var(--pixel);
+	padding: 0.4rem 1rem 0.3rem 2.75rem;
+	position: sticky;
+	top: 0;
+}
+
+#view-list:checked ~ .view .items {
+	display: block;
+}
+
+#view-list:checked ~ .view .items li:nth-child(even) {
+	background: var(--stripe);
+}
+
+#view-list:checked ~ .view .item {
+	border-radius: 0;
+	grid-template-columns: 1.25rem minmax(0, 1fr) 9rem 4.5rem;
+	padding: 0.3rem 1rem;
+}
+
+#view-list:checked ~ .view .item .icon {
+	height: 16px;
+	transform: none;
+	width: 20px;
+}
+
+#view-list:checked ~ .view .item .name {
+	-webkit-line-clamp: 1;
+	padding: 0;
+}
+
+#view-list:checked ~ .view .item .date,
+#view-list:checked ~ .view .item .kind {
+	display: block;
+	font-size: 12px;
+	opacity: 0.75;
+}
+
+#view-list:checked ~ .view .item:hover,
+#view-list:checked ~ .view .item:focus-visible {
+	background: var(--accent-1);
+}
+
+#view-list:checked ~ .view .item:hover .name {
+	background: none;
+}
+
+/* path bar */
+
+.pathbar {
+	align-items: center;
+	background: var(--stripe);
+	border-top: 3px solid var(--ink);
+	display: flex;
+	font: 18px/1 var(--pixel);
+	gap: 1rem;
+	justify-content: space-between;
+	padding: 0.35rem 0.75rem;
+}
+
+.trail {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+	min-width: 0;
+}
+
+.trail a {
+	align-items: center;
+	display: inline-flex;
+	gap: 0.3rem;
+	text-decoration: none;
+}
+
+.trail a:hover {
+	text-decoration: underline;
+}
+
+.trail svg {
+	height: 13px;
+	width: 16px;
+}
+
+.count {
+	flex: none;
+}
+
+/* ---------- taskbar ---------- */
+
+.taskbar {
+	align-items: center;
+	background: var(--paper);
+	border-top: 3px solid var(--ink);
+	bottom: 0;
+	display: flex;
+	gap: 1rem;
+	justify-content: space-between;
+	left: 0;
+	padding: 0.4rem 0.75rem;
+	position: fixed;
+	right: 0;
+	z-index: 1;
+}
+
+.taskbar a {
+	align-items: center;
+	background: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 5px;
+	box-shadow: 2px 2px 0 var(--ink);
+	display: inline-flex;
+	gap: 0.4rem;
+	height: 34px;
+	justify-content: center;
+	min-width: 38px;
+	padding: 0 0.6rem;
+	text-decoration: none;
+}
+
+.taskbar a:hover {
+	background: var(--accent-3);
+}
+
+.taskbar a:active {
+	box-shadow: none;
+	transform: translate(2px, 2px);
+}
+
+.taskbar .start {
+	background: var(--accent-1);
+	font: 22px/1 var(--pixel);
+}
+
+.taskbar .start svg {
+	fill: var(--ink);
+	height: 16px;
+	width: 16px;
+}
+
+.taskbar .links {
+	display: flex;
+	gap: 0.4rem;
+}
+
+/* ---------- small screens ---------- */
+
+@media (max-width: 820px) {
+	.desktop {
+		align-items: stretch;
+		flex-direction: column;
+		gap: 1.5rem;
+		padding: 1.25rem 1rem 1.5rem;
+	}
+
+	.hello {
+		flex: none;
+		margin: 0;
+		transform: none;
+	}
+
+	.finder {
+		flex: none;
+	}
+
+	.view {
+		height: auto;
+		min-height: 0;
+	}
+
+	.content {
+		overflow: visible;
+	}
+
+	.items {
+		grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+	}
+
+	#view-list:checked ~ .view .item {
+		grid-template-columns: 1.25rem minmax(0, 1fr) 6.5rem;
+	}
+
+	#view-list:checked ~ .view .columns {
+		grid-template-columns: minmax(0, 1fr) 6.5rem;
+	}
+
+	#view-list:checked ~ .view .item .kind,
+	#view-list:checked ~ .view .columns span:last-child {
+		display: none;
+	}
+
+	.taskbar .links a {
+		min-width: 34px;
+		padding: 0 0.45rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.item .icon {
+		transition: none;
+	}
+}

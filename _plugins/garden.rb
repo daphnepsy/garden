@@ -58,6 +58,46 @@ module Garden
     nil
   end
 
+  # Every folder (the garden itself first) with its subfolders and notes, for
+  # the Finder-style homepage. Folders are listed by name and notes by title,
+  # like Finder; `id` is the slug the homepage uses in its #links.
+  def self.folder_tree(docs)
+    folders = Hash.new do |all, path|
+      parent = path.empty? ? nil : path.rpartition("/").first
+      all[parent]["folders"] << path unless parent.nil?
+      all[path] = {
+        "path" => path,
+        "name" => path.empty? ? "Garden" : path.split("/").last,
+        "id" => path.empty? ? "" : Jekyll::Utils.slugify(path),
+        "parent" => parent,
+        "folders" => [],
+        "notes" => [],
+      }
+    end
+    folders[""]
+    docs.each { |doc| folders[doc.data["folder"]]["notes"] << doc }
+
+    folders.each_value do |folder|
+      folder["folders"] = folder["folders"].sort_by(&:downcase).map { |path| folders[path] }
+      folder["notes"] = folder["notes"].sort_by { |doc| doc.data["title"].to_s.downcase }
+      folder["parent"] = folders[folder["parent"]] if folder["parent"]
+      folder["trail"] = []
+      ancestor = folder
+      while ancestor
+        folder["trail"].unshift(ancestor)
+        ancestor = ancestor["parent"].is_a?(Hash) ? ancestor["parent"] : nil
+      end
+    end
+    latest_update(folders[""])
+    folders.values.sort_by { |folder| folder["path"].downcase }
+  end
+
+  # A folder was last updated when the newest note anywhere inside it was
+  def self.latest_update(folder)
+    dates = folder["notes"].map { |doc| doc.data["updated"] } + folder["folders"].map { |sub| latest_update(sub) }
+    folder["updated"] = dates.compact.max
+  end
+
   Jekyll::Hooks.register :site, :post_read do |site|
     notes = notes_by_name(site)
     docs = site.collections["notes"].docs
@@ -68,6 +108,8 @@ module Garden
       doc.data["backlinks"] = []
       %w[added updated].each { |field| doc.data[field] = to_date(doc.data[field]) }
     end
+
+    site.data["garden_folders"] = folder_tree(docs)
 
     docs.each do |doc|
       linked = []
